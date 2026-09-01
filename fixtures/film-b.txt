@@ -1,0 +1,369 @@
+LEGACY PROTOCOL
+
+Written as a demo fixture for the Living Movie Memory system.
+Universe: The Voss Cipher
+Project: The Voss Cipher Film Series (Canon Tier 1)
+Story Unit: Film B — "Legacy Protocol"
+In-Universe Period: Present Day, 2024
+In-Universe Date Start: 2024
+
+
+INT. NATIONAL CRYPTOGRAPHIC ARCHIVE, LONDON — DAY
+
+A modern facility behind a Victorian facade. Climate-controlled
+vaults. Digital access logs. DIRECTOR SARAH VOSS, 40s, stands
+in the reading room studying a glass display case. Inside it:
+a brass-and-glass instrument the size of a hatbox, mounted on
+a plinth. A placard reads: THE VOSS CIPHER DEVICE. RECOVERED 1943.
+
+Sarah is Clara Voss's granddaughter. Same jaw. Different century.
+
+An archivist, COLE, 30s, stands nearby with a tablet.
+
+COLE
+First time seeing it in person?
+
+SARAH
+My grandmother never described it
+as small. I always imagined something
+the size of a piano.
+
+COLE
+The legends grow. That's what eighty
+years does.
+
+Sarah studies the device through the glass. Both lock slots are
+visible — left and right. Both are empty. The keys were separated
+from the device decades ago for security reasons.
+
+SARAH
+Where are the keys?
+
+COLE
+That's actually why your office
+called mine.
+
+
+INT. NATIONAL CRYPTOGRAPHIC ARCHIVE, DIRECTOR'S OFFICE — DAY
+
+Sarah sits across from ARCHIVE DIRECTOR PEMBERTON, 60s, a careful
+man who chooses words like a lawyer.
+
+PEMBERTON
+Three weeks ago a private collector
+in Zurich put an item to auction.
+A single brass activation key,
+provenance documented to 1943.
+We believe it is the original key
+from the Cipher Device.
+
+SARAH
+There was only one key.
+
+PEMBERTON
+That was the official record, yes.
+Your grandmother's field report —
+which you've read, I assume —
+stated one key confirmed present.
+
+SARAH
+I've read it many times.
+
+PEMBERTON
+The Zurich key matches the left-side
+lock exactly. Our metallurgical
+analysis confirms it.
+
+Sarah leans back.
+
+SARAH
+So someone has had it for eighty years
+and only now decided to sell it.
+
+PEMBERTON
+It appears so.
+
+
+INT. NATIONAL CRYPTOGRAPHIC ARCHIVE, READING ROOM — DAY
+
+Sarah sits alone at a long table. In front of her: photocopies of
+Clara's original field report from 1943. She reads the line she has
+read a hundred times: "One activation key confirmed present.
+Right-side lock currently unoccupied."
+
+She turns the page. A separate document — a post-war intelligence
+assessment, classified until 2019. She reads a highlighted passage:
+"The Voss Cipher Device requires two simultaneous activation keys
+to operate. Neither key alone is sufficient to engage the mechanism.
+Both locks must be turned in concert."
+
+Sarah sets the document down.
+
+SARAH
+(to herself)
+Two keys. Gran, what did you do
+with the second one?
+
+
+INT. MARCUS WEBB'S OFFICE, WHITEHALL — DAY
+
+MARCUS WEBB, 50s, Deputy Director of a department with no public
+name, reads the same post-war assessment across a desk from Sarah.
+
+MARCUS
+The two-key requirement was kept
+out of the original field reports
+deliberately. Meinhardt's decision.
+If the Germans recovered the device
+and found only one key, they would
+assume the second was simply lost.
+They would not know the device was
+never operable with one key alone.
+
+SARAH
+So my grandmother's report —
+
+MARCUS
+Was accurate as far as it went.
+She documented what she observed.
+One key in the left lock. Right
+lock empty. She had no way of
+knowing the device required both
+simultaneously.
+
+SARAH
+She took the device. Scene nine —
+she had it in her satchel.
+
+MARCUS
+We know. We've known for forty years.
+What we don't know is where she
+acquired the second key, or whether
+she ever used the device at all.
+
+Sarah looks out the window.
+
+SARAH
+If it requires two simultaneous keys,
+and she only ever had one —
+
+MARCUS
+Then whatever she encoded, if
+anything, is still locked.
+
+
+INT. NATIONAL CRYPTOGRAPHIC ARCHIVE, VAULT — NIGHT
+
+Sarah stands before the display case again. After hours. The archive
+is empty. Cole has left her his access card.
+
+She studies the right-side lock. Empty for eighty years.
+
+Her phone buzzes. A message from an unknown number.
+A photograph: a brass key, right-side profile, with a hallmark
+she recognises from the archive's metallurgical report.
+
+A second message: "Reykjavik. Two days."
+
+
+INT. HOTEL LOBBY, REYKJAVIK — EVENING
+
+Sarah waits in a corner chair. A woman enters — INGRID, 70s,
+white-haired, unhurried. She sits across from Sarah without
+introducing herself and sets a small wooden BOX on the table.
+
+INGRID
+Your grandmother gave this to my
+mother in the spring of 1944.
+She said: keep it until someone
+comes asking about two locks.
+
+Sarah opens the box. Inside: a brass KEY, right-side profile,
+identical in style to the Zurich key.
+
+SARAH
+She had it all along.
+
+INGRID
+My mother always assumed it was
+a house key. She kept it in a
+drawer for thirty years.
+
+Sarah holds the key up to the light.
+
+INGRID (CONT'D)
+There is a condition. My mother
+made my grandmother promise.
+The key goes to the archive, not
+to any government. It goes behind
+glass. Not into a lock.
+
+SARAH
+I can agree to that.
+
+
+INT. CHARTERED FLIGHT, SOMEWHERE OVER THE NORTH SEA — NIGHT
+
+Sarah sits alone. The wooden box is in her bag. She opens her
+laptop and pulls up a scanned document — a letter in Clara's
+handwriting, dated April 1944.
+
+She reads aloud quietly.
+
+SARAH
+"The device is intact. Both keys
+are accounted for. I have chosen
+not to use it. The information it
+would unlock died with the men
+who encoded it, and some doors
+are better left closed."
+
+She closes the laptop. Looks out the window at the black water below.
+
+
+INT. NATIONAL CRYPTOGRAPHIC ARCHIVE, READING ROOM — DAY
+
+Sarah and Pemberton sit across from Marcus. The wooden box is on
+the table between them. The Zurich key — acquired at auction by
+a government front — sits beside it.
+
+MARCUS
+So she had both keys from 1943
+onward and never activated it.
+
+SARAH
+That's what the letter says.
+
+PEMBERTON
+Which means the device has never
+been operated. Whatever it was
+built to encode is still locked
+inside the mechanism.
+
+Marcus picks up the Zurich key and turns it over.
+
+MARCUS
+The Red Ledger. Your grandmother
+handed it to Allied Command in
+Dover. It's been in the archive
+since 1943. Everything in it was
+decrypted by 1947.
+
+SARAH
+So the ledger is fully accounted for.
+
+MARCUS
+The ledger, yes. The device, now yes.
+The question is what the device was
+actually built to protect.
+
+He sets the key down.
+
+MARCUS (CONT'D)
+We think the Cipher Device was not
+an encryption machine. We think it
+was a key safe. Built to protect
+something small enough to fit inside
+the mechanism housing itself.
+
+
+INT. NATIONAL CRYPTOGRAPHIC ARCHIVE, CONSERVATION LAB — DAY
+
+A conservator in gloves carefully opens the Cipher Device for the
+first time in decades under Sarah's supervision. The mechanism
+housing is larger than it needs to be for the cipher function alone.
+
+The conservator lifts a false panel inside the housing.
+
+Inside the hidden compartment: a folded piece of paper, brittle
+with age.
+
+Sarah leans in. Reads it. Her expression does not change.
+
+She carefully refolds it and places it in an evidence bag.
+
+SARAH
+(to the conservator)
+This doesn't go into the catalogue.
+Not yet.
+
+
+INT. MARCUS WEBB'S OFFICE, WHITEHALL — NIGHT
+
+Sarah drops the evidence bag on Marcus's desk.
+
+MARCUS
+(reading through the bag)
+Good God.
+
+SARAH
+My grandmother knew. She had both
+keys the entire time and she chose
+never to open it. She knew what
+was inside and she decided it
+should stay locked.
+
+MARCUS
+How could she have known without
+opening it?
+
+SARAH
+She was Clara Voss.
+
+A long silence.
+
+MARCUS
+What do you want to do?
+
+SARAH
+What she did. Put it back behind
+glass. Let it stay closed.
+
+She picks up the evidence bag.
+
+SARAH (CONT'D)
+The Red Ledger is in Allied hands
+where she left it. The device goes
+back in the display case. The keys
+go in separately, in the same case,
+where people can see them but not
+use them. And whatever is in that
+document is above both our pay grades.
+
+She walks to the door.
+
+SARAH (CONT'D)
+Some doors are better left closed.
+
+She leaves.
+
+
+INT. NATIONAL CRYPTOGRAPHIC ARCHIVE, DISPLAY ROOM — DAY
+
+A new display case. Three items on three plinths, side by side:
+
+The CIPHER DEVICE.
+The LEFT KEY, recovered from Zurich.
+The RIGHT KEY, from Ingrid's wooden box.
+
+A new placard: THE VOSS CIPHER. DEVICE AND KEYS REUNITED, 2024.
+
+Cole stands beside Sarah, looking at the display.
+
+COLE
+Do you know what's inside?
+
+SARAH
+No.
+
+A beat.
+
+COLE
+Good answer.
+
+They stand there for a moment. Then Sarah turns and walks out
+through the archive's front doors into the London afternoon.
+
+FADE OUT.
+
+LEGACY PROTOCOL — END
