@@ -1,5 +1,5 @@
-import { config } from "../config/index.js";
-import type { FindingScope, ConflictType, SourceType } from "../types/index.js";
+import { config } from "../config/index";
+import type { FindingScope, ConflictType, SourceType } from "../types/index";
 
 // ---------------------------------------------------------------------------
 // Config — same degradation pattern as logger.ts.
