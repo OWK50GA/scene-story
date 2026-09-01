@@ -40,7 +40,7 @@ function rowToUniverse(r: Record<string, unknown>): Universe {
     universeId: r.universe_id as string,
     name: r.name as string,
     description: r.description as string,
-    createdAt: new Date(r.created_at as string),
+    createdAt: new Date(`${r.created_at as string}Z`.replace(" ", "T")),
   };
 }
 
@@ -245,7 +245,15 @@ export async function createUniverse(
     description: parsed.description,
   });
   const rows = await select("createUniverse", Q.SELECT_UNIVERSE, { universe_id: universeId }, rowToUniverse);
-  return rows[0]!;
+  const created = rows[0];
+  if (!created) {
+    throw new MCPOperationError(
+      "createUniverse",
+      "universe.read_after_write_failed",
+      `Universe ${universeId} was inserted but is not yet readable`
+    );
+  }
+  return created;
 }
 
 export async function getUniverse(universeId: string): Promise<Universe> {
@@ -648,7 +656,7 @@ export async function getCurrentState(
   const directRows = await select(
     "getCurrentState",
     Q.SELECT_ACTIVE_CLAIMS_FOR_ENTITIES,
-    { story_unit_id: storyUnitId, up_to_scene: upToScene },
+    { story_unit_id: storyUnitId, entity_ids: entityIds, up_to_scene: upToScene },
     (r) => ({
       ...rowToClaim(r),
       entityName: r.entity_name as string,
@@ -656,9 +664,8 @@ export async function getCurrentState(
     })
   );
 
-  // Filter to only the requested entity IDs.
-  const requested = new Set(entityIds);
-  const direct = directRows.filter((c) => requested.has(c.universeEntityId));
+  // All rows are already scoped to the requested entity IDs by the SQL filter.
+  const direct = directRows;
 
   // Collect parent entity IDs that need inherited claims fetched.
   const parentIds = new Set(
@@ -669,18 +676,8 @@ export async function getCurrentState(
 
   if (parentIds.size === 0) return direct;
 
-  // Fetch inherited claims from parent entities.
-  const parentRows = await select(
-    "getCurrentState",
-    Q.SELECT_ACTIVE_CLAIMS_FOR_ENTITIES,
-    { story_unit_id: storyUnitId, up_to_scene: upToScene },
-    (r) => ({
-      ...rowToClaim(r),
-      entityName: r.entity_name as string,
-      parentEntityId: (r.parent_entity_id as string | null) ?? null,
-    })
-  );
-  const parentClaims = parentRows.filter((c) => parentIds.has(c.universeEntityId));
+  // Derive parent claims from the already-fetched directRows — no second query needed.
+  const parentClaims = directRows.filter((c) => parentIds.has(c.universeEntityId));
 
   // Child claims take precedence: only include a parent claim if the child
   // has no claim for the same property.

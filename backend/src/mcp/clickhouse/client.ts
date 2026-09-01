@@ -15,7 +15,7 @@ import { config } from "../../config";
 // pooling internally so there is nothing to close manually in normal operation.
 // ---------------------------------------------------------------------------
 
-const url = `https://${config.CLICKHOUSE_HOST}:${config.PORT}`;
+const url = `https://${config.CLICKHOUSE_HOST}:${config.CLICKHOUSE_PORT}`;
 const username = config.CLICKHOUSE_USERNAME;
 const password = config.CLICKHOUSE_PASSWORD;
 const database = config.CLICKHOUSE_DATABASE;

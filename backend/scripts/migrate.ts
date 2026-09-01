@@ -24,10 +24,11 @@ async function run() {
   console.log(`Connecting to ${config.CLICKHOUSE_HOST}:${config.CLICKHOUSE_PORT}...`);
 
   // 1. Create the database if it doesn't already exist.
+  const dbName = config.CLICKHOUSE_DATABASE;
   await client.command({
-    query: `CREATE DATABASE IF NOT EXISTS lmm`,
+    query: `CREATE DATABASE IF NOT EXISTS ${dbName}`,
   });
-  console.log("✓ Database 'lmm' ready");
+  console.log(`✓ Database '${dbName}' ready`);
 
   // 2. Run each table DDL in dependency order.
   for (const ddl of DDL_TABLES_IN_ORDER) {

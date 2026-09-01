@@ -111,7 +111,7 @@ export const DDL = {
       superseded_by_canon       UInt8 DEFAULT 0,
       superseding_claim_id      Nullable(String)
     ) ENGINE = MergeTree()
-    ORDER BY (universe_id, universe_entity_id, property, story_unit_id, valid_to_scene)
+    ORDER BY (universe_id, universe_entity_id, property, story_unit_id)
   `,
 
   events: `
@@ -363,7 +363,6 @@ export const Q = {
   `,
 
   // Active claims for a list of entities as of a given scene — used for context injection.
-  // The entity_ids list is expanded by the operations layer before execution.
   SELECT_ACTIVE_CLAIMS_FOR_ENTITIES: `
     SELECT
       c.claim_id, c.universe_entity_id, c.property, c.value,
@@ -373,6 +372,7 @@ export const Q = {
     FROM lmm.claims c
     JOIN lmm.universe_entities e ON c.universe_entity_id = e.entity_id
     WHERE c.story_unit_id  = {story_unit_id: String}
+      AND c.universe_entity_id IN ({entity_ids: Array(String)})
       AND c.source_scene_number <= {up_to_scene: UInt16}
       AND c.valid_to_scene IS NULL
       AND c.superseded_by_canon = 0
@@ -380,12 +380,13 @@ export const Q = {
   `,
 
   // All claims for an entity across all story units — entity history view.
+  // su columns that share names with claim columns are aliased to avoid collisions.
   SELECT_ENTITY_HISTORY: `
     SELECT
       c.*,
       su.title AS story_unit_title,
-      su.in_universe_period,
-      su.in_universe_date_start,
+      su.in_universe_period    AS su_in_universe_period,
+      su.in_universe_date_start AS su_in_universe_date_start,
       su.release_order
     FROM lmm.claims c
     JOIN lmm.story_units su ON c.story_unit_id = su.story_unit_id
@@ -476,7 +477,8 @@ export const Q = {
     WHERE c.universe_id = {universe_id: String}
       AND c.valid_to_scene IS NULL
       AND c.superseded_by_canon = 0
-      AND e.first_appearance_unit_id IN ({watched_unit_ids: Array(String)})
+      AND (e.first_appearance_unit_id IN ({watched_unit_ids: Array(String)})
+           OR e.first_appearance_unit_id IS NULL)
       AND ({boundary_filter})
     ORDER BY su.in_universe_date_start NULLS LAST, c.valid_from_scene
   `,

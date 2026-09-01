@@ -15,18 +15,16 @@ export const configSchema = z.object({
   CLICKHOUSE_PASSWORD: z.string().min(1),
   CLICKHOUSE_DATABASE: z.string(),
 
-  GRAFANA_LOKI_URL: z.string().url(),
-  GRAFANA_LOKI_USERNAME: z.string().min(1),
-  GRAFANA_LOKI_TOKEN: z.string().min(1),
+  GRAFANA_LOKI_URL: z.string().url().optional(),
+  GRAFANA_LOKI_USERNAME: z.string().min(1).optional(),
+  GRAFANA_LOKI_TOKEN: z.string().min(1).optional(),
 
-  GRAFANA_PROMETHEUS_URL: z.string().url(),
-  GRAFANA_PROMETHEUS_USERNAME: z.string().min(1),
-  GRAFANA_PROMETHEUS_TOKEN: z.string().min(1),
+  GRAFANA_PROMETHEUS_URL: z.string().url().optional(),
+  GRAFANA_PROMETHEUS_USERNAME: z.string().min(1).optional(),
+  GRAFANA_PROMETHEUS_TOKEN: z.string().min(1).optional(),
 
   GRAFANA_MCP_TOKEN: z.string().optional(),
   GRAFANA_STACK_URL: z.string().optional(),
 });
 
-export const config = configSchema.parse({
-  // ... your existing object
-});
+export type Config = z.infer<typeof configSchema>;
