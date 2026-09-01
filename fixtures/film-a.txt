@@ -1,0 +1,320 @@
+THE VOSS CIPHER
+
+Written as a demo fixture for the Living Movie Memory system.
+Universe: The Voss Cipher
+Project: The Voss Cipher Film Series (Canon Tier 1)
+Story Unit: Film A — "The Voss Cipher"
+In-Universe Period: World War II, 1943
+In-Universe Date Start: 1943
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, LONDON — NIGHT
+
+A spare room buried three floors underground. Maps cover every wall.
+COLONEL MEINHARDT, 50s, sits behind a heavy oak desk, studying a
+brass-and-glass instrument the size of a hatbox. This is the CIPHER
+DEVICE — an encryption machine of German design, captured at great
+cost six months prior. It sits open, its interior mechanisms exposed,
+a single brass KEY inserted in the left-side lock. The right-side
+lock is empty.
+
+MEINHARDT
+(to himself)
+One key. One chance.
+
+He closes the Cipher Device and locks it in his private IRON SAFE,
+set into the wall behind his desk. He spins the dial.
+
+A knock. AGENT CLARA VOSS, 30s, enters. Sharp. Tired. She carries a
+leather SATCHEL and wears a SIGNAL WATCH on her left wrist — standard
+field issue, though hers has a cracked crystal from a prior operation.
+
+MEINHARDT
+You're late, Voss.
+
+CLARA
+The checkpoint on Aldgate was new.
+
+She drops the satchel on the desk. Inside: a RED LEDGER, cloth-bound,
+its pages dense with handwritten codes.
+
+MEINHARDT
+The ledger. Good. Lock it in the cabinet.
+
+Clara crosses to the filing CABINET on the far wall and locks the
+Red Ledger inside. She pockets the cabinet key.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, BRIEFING ROOM — NIGHT
+
+Clara and DR. HARTLEY, 40s, a soft-spoken codebreaker with ink-stained
+fingers, sit across from each other. He has a cup of tea and a blank
+notepad. He has not been briefed on the Cipher Device and does not
+know it is in the building.
+
+HARTLEY
+They said you needed a codebreaker.
+I was told nothing else.
+
+CLARA
+That's correct. I need someone who can
+work blind. No context, no background.
+
+HARTLEY
+Blind analysis. My specialty.
+
+Clara slides a single encoded page across the table — a fragment,
+nothing that reveals the device's location or nature.
+
+HARTLEY (CONT'D)
+Where did this originate?
+
+CLARA
+I can't tell you that yet. Can you
+work with the fragment alone?
+
+HARTLEY
+(studying it)
+I can try. Give me until morning.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, CORRIDOR — NIGHT
+
+Clara walks back toward Meinhardt's office. She checks the SIGNAL
+WATCH on her wrist. 23:14. The cracked crystal catches the corridor
+light. She continues walking.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, MEINHARDT'S OFFICE — NIGHT
+
+Meinhardt is gone. The office is empty. Clara tries the iron safe —
+locked. She checks the cabinet — also locked, her key still in her
+pocket.
+
+She sits at Meinhardt's desk and begins writing a field report.
+She writes: "Cipher Device secured. Location: Colonel's safe.
+Red Ledger secured. Location: Filing cabinet. One activation key
+confirmed present. Right-side lock currently unoccupied."
+
+She folds the report and seals it in an envelope addressed to
+ALLIED COMMAND.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, HARTLEY'S ROOM — EARLY MORNING
+
+Hartley has been working through the night. Pages of attempted
+decodings cover the table. Clara enters with two cups of tea.
+
+HARTLEY
+The fragment is consistent with a
+substitution cipher layered over a
+positional grid. Sophisticated.
+Pre-war German engineering, I'd say.
+
+CLARA
+Can you break it?
+
+HARTLEY
+Not from a fragment. I would need
+the machine itself.
+
+Clara says nothing. She studies him. He is asking in the abstract —
+he does not know what machine she is referring to, or that any such
+machine is in the building. He does not know the cipher's location.
+
+HARTLEY (CONT'D)
+Whatever it encodes — the location
+of the machine doesn't matter to me.
+I work with patterns, not objects.
+
+CLARA
+Good. Keep it that way.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, MEINHARDT'S OFFICE — MORNING
+
+Meinhardt returns. Clara is still there. He opens the iron safe and
+removes the Cipher Device, setting it on the desk.
+
+MEINHARDT
+We have a problem. Berlin knows we
+have it. They will send someone for
+the key. Without the key the device
+is a paperweight.
+
+He opens the Cipher Device. The single brass KEY sits in the
+left-side lock exactly where he left it. The right-side lock
+remains empty.
+
+CLARA
+Then we move the key. Separate it
+from the device.
+
+MEINHARDT
+No. If the key is missing when they
+come, they'll know we've read the
+protocols. The key stays in the device.
+
+He closes the Cipher Device and returns it to the iron safe. Locks it.
+
+MEINHARDT (CONT'D)
+The device stays here. In my safe.
+Nobody moves it. Are we clear?
+
+Clara nods.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, CORRIDOR — DAY
+
+Clara walks briskly. She turns a corner and nearly collides with
+Hartley, who is carrying a stack of papers.
+
+HARTLEY
+Miss Voss. I've been looking for you.
+
+CLARA
+I have ten minutes.
+
+HARTLEY
+I've been thinking about the fragment.
+I believe the encoding machine uses
+a dual-lock activation system.
+
+Clara stops.
+
+CLARA
+What makes you say that?
+
+HARTLEY
+The pattern implies two independent
+cipher streams running in parallel.
+You cannot generate that with a single
+input key. Structurally, it requires
+two simultaneous keys. The machine
+almost certainly has two locks.
+
+He deduced this entirely from the encoded fragment. He has never seen
+the Cipher Device. He does not know it is in the building. He does
+not know its physical configuration.
+
+CLARA
+(carefully)
+That's a reasonable hypothesis.
+
+HARTLEY
+It's more than a hypothesis. The
+mathematics are unambiguous. Two keys.
+Two locks. Activated simultaneously.
+
+He moves on down the corridor. Clara watches him go.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, RECORDS ROOM — DAY
+
+Clara stands at the filing cabinet. She unlocks it with her key
+and removes the Red Ledger. She carries it to the reading table
+and opens it.
+
+The ledger contains coordinates, dates, names. Clara photographs
+several pages with a small CAMERA. She closes the ledger, returns
+it to the cabinet, and locks it again. The cabinet key goes back
+in her pocket.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, STAIRWELL — DAY
+
+Clara descends. She stops on a landing and opens her satchel.
+
+The CIPHER DEVICE is inside — brass fittings visible through the
+open flap. Both the left-side lock and the right-side lock each
+have a brass KEY inserted. The right-side lock, which was confirmed
+empty in Meinhardt's morning inspection and in Clara's own field
+report, now holds a second key.
+
+She closes the satchel and continues down the stairs.
+
+
+INT. SAFE HOUSE, EAST LONDON — NIGHT
+
+A cramped room above a fishmonger. Blackout curtains. Clara sets
+the satchel on the table. She does not open it.
+
+She sits. Writes two lines in a small notebook:
+"Device acquired. Keys: two. Condition: intact."
+
+She tears the page out and burns it over the candle.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, BRIEFING ROOM — NIGHT
+
+Hartley enters to find Meinhardt waiting. No Clara.
+
+MEINHARDT
+Sit down, Doctor.
+
+Hartley sits. Meinhardt slides a photograph across the table.
+It shows the Cipher Device — exterior only, closed.
+
+MEINHARDT (CONT'D)
+You've been analysing a fragment
+produced by this machine.
+
+HARTLEY
+(studying the photograph)
+I had no idea it was a physical
+artefact in this building. I was
+working entirely in the abstract.
+
+MEINHARDT
+That is exactly why you were chosen.
+
+Hartley sets the photograph down.
+
+HARTLEY
+The dual-lock configuration — I was right?
+
+MEINHARDT
+You were. One key was always present.
+The second key's location was, until
+recently, unknown to us entirely.
+
+
+INT. BRITISH INTELLIGENCE HEADQUARTERS, MEINHARDT'S OFFICE — NIGHT
+
+Meinhardt returns to his office. Opens the iron safe.
+It is empty. He stares into it for a long moment.
+
+He picks up the telephone.
+
+MEINHARDT
+She's gone. And she's taken it with her.
+
+
+INT. ALLIED COMMAND, DOVER — DAWN
+
+Clara stands before a table of ALLIED OFFICERS. The Red Ledger
+is open in front of them. The officers examine it page by page.
+
+ALLIED OFFICER
+Where is the device now?
+
+CLARA
+Safe. Beyond reach.
+
+ALLIED OFFICER
+And the ledger?
+
+CLARA
+Yours. Everything in it is current
+as of forty-eight hours ago.
+
+She slides the sealed envelope across the table — the field report
+she wrote in scene 4. One of the officers breaks the seal and reads.
+
+The Red Ledger remains on the table in Allied hands.
+
+Clara turns and walks out into the grey Dover morning.
+
+FADE OUT.
+
+THE VOSS CIPHER — END
