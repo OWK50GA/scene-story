@@ -1,8 +1,9 @@
 import dotenv from "dotenv";
+import { configSchema } from "./schema";
 
 dotenv.config();
 
-export const config = {
+const configObj = {
     // Server configuration
     NODE_ENV: process.env.NODE_ENV || "development",
     PORT: parseInt(process.env.PORT || "3001"),
@@ -34,3 +35,5 @@ export const config = {
     GRAFANA_MCP_TOKEN: process.env.GRAFANA_MCP_TOKEN,
     GRAFANA_STACK_URL: process.env.GRAFANA_STACK_URL,
 }
+
+export const config = configSchema.parse(configObj);

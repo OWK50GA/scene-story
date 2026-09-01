@@ -1,5 +1,5 @@
-import { config } from "../config/index.js";
-import type { LogEvent } from "../types/index.js";
+import { config } from "../config/index";
+import type { LogEvent } from "../types/index";
 
 // ---------------------------------------------------------------------------
 // Config — read once at module load. If any value is missing the logger
