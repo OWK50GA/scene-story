@@ -6,8 +6,8 @@ export type { ParsedScene, ParseResult } from './text';
 export { ParseError } from './text'
 
 export async function parseScreenplay(buffer: Buffer, options: { mimeType?: string; filename?: string }): Promise<ParseResult> {
-    const mime = options.filename?.toLowerCase() ?? '';
-    const ext = options.filename?.split(".").pop();
+    const mime = options.mimeType?.toLowerCase() ?? '';
+    const ext = options.filename?.toLowerCase().split(".").pop();
 
     if (mime === "application/pdf" || ext === "pdf") {
         return parseScreenplayPdf(buffer);

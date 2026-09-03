@@ -554,7 +554,7 @@ function formatContextSummary(
     }
 
     for (const c of group.inheritedClaims) {
-      const parentName = idToName.get(c.universeEntityId) ?? c.universeEntityId;
+      const parentName = (c.parentEntityId ? idToName.get(c.parentEntityId) : undefined) ?? idToName.get(c.universeEntityId) ?? c.universeEntityId;
       lines.push(
         `  [inherited from ${parentName}]: ${c.property} = "${c.value}" ` +
           `(established scene ${c.sourceSceneNumber}, confidence ${c.confidence.toFixed(2)})`

@@ -114,7 +114,7 @@ function isHeading(line: string): boolean {
 function stripTransitions(text: string): string {
   return text
     .split("\n")
-    .filter((line) => !TRANSITION_RE.test(line))
+    .filter((line) => !TRANSITION_RE.test(line.trim()))
     .join("\n");
 }
 

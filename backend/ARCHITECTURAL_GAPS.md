@@ -119,3 +119,54 @@ Read `scripts/output/film-a-summary-<timestamp>.txt` and iterate on
 
 Blocks the Task 7 and Task 8 done criteria. Does not block Task 9 code work,
 but should be resolved before end-to-end pipeline testing.
+
+---
+
+## GAP-003 — Grafana MCP health queries not wired in Director monitoring
+
+### What is missing
+
+`checkIngestionHealth` in `backend/src/agents/director/monitoring.ts` is designed
+to query Grafana Cloud Prometheus for per-scene claim counts
+(`lmm_claims_written_total`) and processing durations
+(`lmm_scene_ingestion_duration_ms`). These metrics are pushed by the Story
+Analyst on every scene via `recordSceneIngestionDuration` and
+`recordClaimWritten` in `metrics.ts`.
+
+Currently, health data is read directly from ClickHouse scene records instead.
+This means duration-based anomaly detection (> 5× median) is not available from
+the health check endpoint — only failed scene counts are surfaced.
+
+### Why it matters
+
+The Director's anomaly thresholds (design.md § Director Agent → Anomaly
+Thresholds) require duration data per scene. Without Grafana, the health check
+can only flag scenes with `ingestion_status = "failed"`, not slow scenes that
+completed with low claim counts. The `retryScene` path in `monitoring.ts` is
+not affected — it re-runs based on the result it receives directly.
+
+### Where the fix belongs
+
+`backend/src/mcp/grafana/client.ts` — thin wrapper around the Grafana HTTP API
+(or Grafana MCP server when available).
+
+Once the client exists, replace the ClickHouse scene reads in
+`checkIngestionHealth` with two Prometheus range queries:
+
+```typescript
+const claimCounts = await grafana.queryRange(
+  `sum by (scene_number) (lmm_claims_written_total{story_unit_id="${storyUnitId}"})`
+);
+const durations = await grafana.queryRange(
+  `lmm_scene_ingestion_duration_ms{story_unit_id="${storyUnitId}"}`
+);
+```
+
+Then compute the median and flag duration anomalies exactly as `detectAnomaly`
+does in `orchestration.ts`.
+
+### Blocking status
+
+Does not block any task. Health check is functional (failed scenes are caught).
+Duration-based anomaly detection in the health endpoint is degraded until fixed.
+Address when implementing the Grafana dashboard (Task 17).

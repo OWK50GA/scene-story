@@ -379,7 +379,16 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
         c.value.toLowerCase().includes("no knowledge") ||
         c.value.toLowerCase().includes("blind")
     );
-    const s7HasKnowledge = s7KnowledgeClaims.length > 0;
+
+    // Scene 7 must have a knowledge claim AND its value must differ from
+    // scene 6's value. A model that returns "unaware" for both scenes would
+    // not represent a genuine contradiction and should not pass C2.
+    const s6FirstValue = s6KnowledgeClaims[0]?.value.toLowerCase() ?? "";
+    const s7HasKnowledge =
+      s7KnowledgeClaims.length > 0 &&
+      s7KnowledgeClaims.some(
+        (c) => c.value.toLowerCase() !== s6FirstValue
+      );
 
     const pass = s6HasUnaware && s7HasKnowledge;
 

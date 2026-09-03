@@ -192,9 +192,12 @@ export async function runIngestionPipeline(
     let result = await processScene(scene, unit, project, sceneTotal);
 
     // ── Anomaly check ─────────────────────────────────────────────────────
+    // Only retry scenes that actually failed. Low-claim or slow-but-complete
+    // scenes are flagged for review but not re-run — retrying a completed scene
+    // would duplicate the claims and events already written to ClickHouse.
     const isAnomaly = detectAnomaly(result, durations);
 
-    if (isAnomaly) {
+    if (isAnomaly && result.status === "failed") {
       onRetry?.(scene.sceneNumber);
 
       // Single retry.
@@ -208,7 +211,7 @@ export async function runIngestionPipeline(
         detail: {
           claimsWritten: result.claimsWritten,
           durationMs: result.durationMs,
-          reason: result.status === "failed" ? result.error : "low_claims_or_slow",
+          reason: result.error ?? "failed",
         },
       });
 
@@ -224,6 +227,15 @@ export async function runIngestionPipeline(
           durationMs: result.durationMs,
         });
       }
+    } else if (isAnomaly) {
+      // Completed but anomalous (e.g. low claims, slow) — flag without retrying.
+      await flagForReview(unit.universeId, {
+        reason: "scene_anomaly_completed",
+        storyUnitId,
+        sceneNumber: scene.sceneNumber,
+        claimsWritten: result.claimsWritten,
+        durationMs: result.durationMs,
+      });
     }
 
     // ── Accumulate results ────────────────────────────────────────────────

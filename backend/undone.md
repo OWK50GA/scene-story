@@ -1,6 +1,6 @@
 # Undone / Deferred
 
-See /ARCHITECTURAL_GAPS.md in the project root for full details on each item.
+See [ARCHITECTURAL_GAPS.md](./ARCHITECTURAL_GAPS.md) for full details on each item.
 
 ---
 
