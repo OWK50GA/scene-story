@@ -1,4 +1,4 @@
-# Agentic Cinema — Living Movie Memory
+# Scene Story — Living Movie Memory
 
 A structured, queryable story-state engine built on top of a screenplay. It catches continuity errors before they reach production, and answers audience questions without spoiling what they haven't seen yet.
 
