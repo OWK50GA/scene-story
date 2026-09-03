@@ -277,11 +277,13 @@ describe("parseScreenplayTextOrThrow", () => {
   });
 
   it("ParseError has name 'ParseError'", () => {
+    let thrown: unknown;
     try {
       parseScreenplayTextOrThrow("no headings");
     } catch (e) {
-      expect(e).toBeInstanceOf(ParseError);
-      expect((e as ParseError).name).toBe("ParseError");
+      thrown = e;
     }
+    expect(thrown).toBeInstanceOf(ParseError);
+    expect((thrown as ParseError).name).toBe("ParseError");
   });
 });

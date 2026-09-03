@@ -173,6 +173,19 @@ describe("SceneExtractionSchema", () => {
     expect(SceneExtractionSchema.safeParse(input).success).toBe(false);
   });
 
+  it("rejects confidence outside the sourceType range", () => {
+    for (const [sourceType, confidence] of [
+      ["explicit", 0.89],
+      ["implied", 0.9],
+      ["inferred", 0.61],
+    ] as const) {
+      expect(SceneExtractionSchema.safeParse({
+        ...validExtraction,
+        claims: [{ ...validExtraction.claims[0]!, sourceType, confidence }],
+      }).success).toBe(false);
+    }
+  });
+
   it("rejects a claim with empty entityName", () => {
     const input = {
       ...validExtraction,

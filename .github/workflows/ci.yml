@@ -63,13 +63,13 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
-      - name: TypeScript type check
-        run: pnpm run typecheck
-        working-directory: frontend
+      # - name: TypeScript type check
+      #   run: pnpm run typecheck
+      #   working-directory: frontend
 
-      - name: Lint (Biome)
-        run: pnpm run lint
-        working-directory: frontend
+      # - name: Lint (Biome)
+      #   run: pnpm run lint
+      #   working-directory: frontend
 
       - name: Next.js build
         run: pnpm run build

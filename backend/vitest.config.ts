@@ -8,5 +8,14 @@ export default defineConfig({
     environment: "node",
     // Produce a clean, readable summary in CI
     reporters: ["verbose"],
+    // Stub the required env vars so config/index.ts doesn't throw at import
+    // time when running pure unit tests that have no real infrastructure.
+    // These values are never used by the tests themselves — they only satisfy
+    // the Zod schema that runs eagerly when the config module is loaded.
+    env: {
+      GEMINI_API_KEY: "test-key",
+      CLICKHOUSE_HOST: "localhost",
+      CLICKHOUSE_PASSWORD: "test-password",
+    },
   },
 });

@@ -173,7 +173,7 @@ describe("buildExtractionPrompt", () => {
       contextSummary: "",
       sceneTotal: 14,
     });
-    expect(result.trimEnd()).toContain("Return JSON only.");
+    expect(result.trimEnd()).toMatch(/Return JSON only\.$/);
   });
 
   it("includes the END OF CURRENT SCENE boundary marker", () => {
