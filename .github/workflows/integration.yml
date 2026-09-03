@@ -1,0 +1,54 @@
+name: Integration
+
+on:
+  # Run manually from the Actions tab
+  workflow_dispatch:
+  # Also run automatically when a PR is merged to master
+  push:
+    branches: [master]
+
+jobs:
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+
+    # env:
+    #   GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+    #   CLICKHOUSE_HOST: ${{ secrets.CLICKHOUSE_HOST }}
+    #   CLICKHOUSE_PORT: ${{ secrets.CLICKHOUSE_PORT }}
+    #   CLICKHOUSE_DATABASE: ${{ secrets.CLICKHOUSE_DATABASE }}
+    #   CLICKHOUSE_USER: ${{ secrets.CLICKHOUSE_USER }}
+    #   CLICKHOUSE_PASSWORD: ${{ secrets.CLICKHOUSE_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: backend
+
+      # Prompt iteration loop — verifies extraction quality against film-a.txt
+      # Requires GEMINI_API_KEY. Produces timestamped output in scripts/output/.
+      # - name: Run prompt iteration script
+      #   run: pnpm tsx scripts/iterate-prompt.ts
+      #   working-directory: backend
+
+      # MCP operation tests against real ClickHouse
+      # Skipped until the integration test suite is written
+      # Uncomment and update the path once
+      # - name: MCP ClickHouse integration tests
+      #   run: pnpm vitest run src/mcp
+      #   working-directory: backend

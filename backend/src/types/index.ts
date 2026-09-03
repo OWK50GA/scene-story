@@ -253,15 +253,35 @@ export const SceneExtractionSchema = z.object({
     })
   ),
   claims: z.array(
-    z.object({
-      entityName: z.string().min(1),
-      property: z.string().min(1),
-      value: z.string().min(1),
-      sourceType: z.enum(["explicit", "implied", "inferred"]),
-      confidence: z.number().min(0).max(1),
-      confidenceRationale: z.string(),
-      sourceLine: z.string(),
-    })
+    z.discriminatedUnion("sourceType", [
+      z.object({
+        entityName: z.string().min(1),
+        property: z.string().min(1),
+        value: z.string().min(1),
+        sourceType: z.literal("explicit"),
+        confidence: z.number().min(0.9).max(1.0),
+        confidenceRationale: z.string(),
+        sourceLine: z.string(),
+      }),
+      z.object({
+        entityName: z.string().min(1),
+        property: z.string().min(1),
+        value: z.string().min(1),
+        sourceType: z.literal("implied"),
+        confidence: z.number().min(0.75).max(0.89),
+        confidenceRationale: z.string(),
+        sourceLine: z.string(),
+      }),
+      z.object({
+        entityName: z.string().min(1),
+        property: z.string().min(1),
+        value: z.string().min(1),
+        sourceType: z.literal("inferred"),
+        confidence: z.number().min(0.0).max(0.6),
+        confidenceRationale: z.string(),
+        sourceLine: z.string(),
+      }),
+    ])
   ),
   events: z.array(
     z.object({
