@@ -441,9 +441,11 @@ async function resolveEntityName(
 // Standard DP implementation. Operates on the full strings — callers should
 // lowercase both inputs before calling if case-insensitive comparison is needed.
 // Returns early when the distance already exceeds 2 to avoid unnecessary work.
+//
+// Exported for unit testing.
 // -----------------------------------------------------------------------------
 
-function levenshtein(a: string, b: string): number {
+export function levenshtein(a: string, b: string): number {
   // Quick exits.
   if (a === b) return 0;
   if (a.length === 0) return b.length;
@@ -489,9 +491,11 @@ function levenshtein(a: string, b: string): number {
 //   - Cipher Device: location = "locked in Meinhardt's safe" (scene 4, conf 1.00)
 //   - Clara Voss: possession = "Signal Watch" (scene 3, conf 1.00)
 //     [inherited from Satchel]: contents = "encoded documents" (scene 1, conf 0.90)
+//
+// Exported for unit testing.
 // -----------------------------------------------------------------------------
 
-function formatContextSummary(
+export function formatContextSummary(
   stateRows: Array<{
     entityName?: string;
     universeEntityId: string;
