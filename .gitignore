@@ -2,3 +2,6 @@
 .kiro
 node_modules
 dist
+
+# Prompt iteration outputs — timestamped, not committed
+backend/scripts/output/
