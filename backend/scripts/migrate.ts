@@ -21,7 +21,9 @@ const client = createClient({
 });
 
 async function run() {
-  console.log(`Connecting to ${config.CLICKHOUSE_HOST}:${config.CLICKHOUSE_PORT}...`);
+  console.log(
+    `Connecting to ${config.CLICKHOUSE_HOST}:${config.CLICKHOUSE_PORT}...`,
+  );
 
   // 1. Create the database if it doesn't already exist.
   const dbName = config.CLICKHOUSE_DATABASE;

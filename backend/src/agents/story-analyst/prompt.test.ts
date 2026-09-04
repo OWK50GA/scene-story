@@ -125,7 +125,8 @@ describe("buildExtractionPrompt", () => {
   });
 
   it("does NOT use the first-scene fallback when contextSummary is provided", () => {
-    const summary = "- Clara Voss: location = \"Archive Room\" (established scene 3, confidence 1.00)";
+    const summary =
+      '- Clara Voss: location = "Archive Room" (established scene 3, confidence 1.00)';
     const result = buildExtractionPrompt({
       scene: makeScene({ sceneNumber: 7 }),
       unit: makeUnit(),

@@ -126,7 +126,9 @@ async function main() {
     process.exit(1);
   }
 
-  console.log(`\n  Parsed ${parsedScenes.length} scenes (preamble: ${preamble.length > 0 ? "present" : "empty"})\n`);
+  console.log(
+    `\n  Parsed ${parsedScenes.length} scenes (preamble: ${preamble.length > 0 ? "present" : "empty"})\n`,
+  );
 
   const sceneTotal = parsedScenes.length;
   const results: SceneResult[] = [];
@@ -145,7 +147,9 @@ async function main() {
       ingestionStatus: "pending",
     };
 
-    process.stdout.write(`  Scene ${String(ps.sceneNumber).padStart(2, " ")} / ${sceneTotal}  ${ps.heading.slice(0, 55).padEnd(55, " ")}  `);
+    process.stdout.write(
+      `  Scene ${String(ps.sceneNumber).padStart(2, " ")} / ${sceneTotal}  ${ps.heading.slice(0, 55).padEnd(55, " ")}  `,
+    );
 
     const start = Date.now();
 
@@ -168,7 +172,7 @@ async function main() {
       const eventCount = extraction.events.length;
 
       console.log(
-        `✓  ${claimCount} claims  ${entityCount} entities  ${eventCount} events  (${durationMs}ms)`
+        `✓  ${claimCount} claims  ${entityCount} entities  ${eventCount} events  (${durationMs}ms)`,
       );
     } catch (err) {
       const durationMs = Date.now() - start;
@@ -176,8 +180,8 @@ async function main() {
         err instanceof ExtractionError
           ? err.message
           : err instanceof Error
-          ? err.message
-          : String(err);
+            ? err.message
+            : String(err);
 
       results.push({
         sceneNumber: ps.sceneNumber,
@@ -267,7 +271,7 @@ function buildSummary(results: SceneResult[], ts: string): string {
       const entityNames = e.entities.map((en) => en.canonicalName).join(", ");
       lines.push(
         `  Scene ${String(r.sceneNumber).padStart(2, " ")}  ` +
-        `${e.claims.length} claims  ${e.entities.length} entities  ${e.events.length} events`
+          `${e.claims.length} claims  ${e.entities.length} entities  ${e.events.length} events`,
       );
       lines.push(`         Entities: ${entityNames || "(none)"}`);
 
@@ -275,7 +279,7 @@ function buildSummary(results: SceneResult[], ts: string): string {
       for (const cl of e.claims) {
         lines.push(
           `         Claim: [${cl.entityName}] ${cl.property} = "${cl.value}" ` +
-          `(${cl.sourceType}, ${cl.confidence.toFixed(2)})`
+            `(${cl.sourceType}, ${cl.confidence.toFixed(2)})`,
         );
       }
 
@@ -301,7 +305,7 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
   // Helper: find claims on a given entity name (case-insensitive partial match)
   const claimsFor = (extraction: SceneExtraction, entityFragment: string) =>
     extraction.claims.filter((c) =>
-      c.entityName.toLowerCase().includes(entityFragment.toLowerCase())
+      c.entityName.toLowerCase().includes(entityFragment.toLowerCase()),
     );
 
   // ─── C1: Cipher Device location contradiction ────────────────────────────
@@ -312,13 +316,15 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
     const s5Claims = s5 ? claimsFor(s5, "cipher") : [];
     const s8Claims = s8 ? claimsFor(s8, "cipher") : [];
 
-    const s5LocationClaims = s5Claims.filter((c) =>
-      c.property.toLowerCase().includes("location") ||
-      c.property.toLowerCase().includes("possession")
+    const s5LocationClaims = s5Claims.filter(
+      (c) =>
+        c.property.toLowerCase().includes("location") ||
+        c.property.toLowerCase().includes("possession"),
     );
-    const s8LocationClaims = s8Claims.filter((c) =>
-      c.property.toLowerCase().includes("location") ||
-      c.property.toLowerCase().includes("possession")
+    const s8LocationClaims = s8Claims.filter(
+      (c) =>
+        c.property.toLowerCase().includes("location") ||
+        c.property.toLowerCase().includes("possession"),
     );
 
     // Check that scene 5 places it somewhere secure (safe/Meinhardt) and
@@ -326,14 +332,14 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
     const s5HasSafe = s5LocationClaims.some(
       (c) =>
         c.value.toLowerCase().includes("safe") ||
-        c.value.toLowerCase().includes("meinhardt")
+        c.value.toLowerCase().includes("meinhardt"),
     );
     const s8HasClara = s8LocationClaims.some(
       (c) =>
         c.value.toLowerCase().includes("clara") ||
         c.value.toLowerCase().includes("satchel") ||
         c.value.toLowerCase().includes("possession") ||
-        c.value.toLowerCase().includes("stairwell")
+        c.value.toLowerCase().includes("stairwell"),
     );
 
     const pass = s5HasSafe && s8HasClara;
@@ -357,18 +363,20 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
     const s6Claims = s6 ? claimsFor(s6, "hartley") : [];
     const s7Claims = s7 ? claimsFor(s7, "hartley") : [];
 
-    const s6KnowledgeClaims = s6Claims.filter((c) =>
-      c.property.toLowerCase().includes("knowledge") ||
-      c.property.toLowerCase().includes("aware") ||
-      c.property.toLowerCase().includes("know")
+    const s6KnowledgeClaims = s6Claims.filter(
+      (c) =>
+        c.property.toLowerCase().includes("knowledge") ||
+        c.property.toLowerCase().includes("aware") ||
+        c.property.toLowerCase().includes("know"),
     );
-    const s7KnowledgeClaims = s7Claims.filter((c) =>
-      c.property.toLowerCase().includes("knowledge") ||
-      c.property.toLowerCase().includes("aware") ||
-      c.property.toLowerCase().includes("know") ||
-      c.property.toLowerCase().includes("deduc") ||
-      c.property.toLowerCase().includes("configuration") ||
-      c.property.toLowerCase().includes("belief")
+    const s7KnowledgeClaims = s7Claims.filter(
+      (c) =>
+        c.property.toLowerCase().includes("knowledge") ||
+        c.property.toLowerCase().includes("aware") ||
+        c.property.toLowerCase().includes("know") ||
+        c.property.toLowerCase().includes("deduc") ||
+        c.property.toLowerCase().includes("configuration") ||
+        c.property.toLowerCase().includes("belief"),
     );
 
     const s6HasUnaware = s6KnowledgeClaims.some(
@@ -377,7 +385,7 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
         c.value.toLowerCase().includes("does not know") ||
         c.value.toLowerCase().includes("not know") ||
         c.value.toLowerCase().includes("no knowledge") ||
-        c.value.toLowerCase().includes("blind")
+        c.value.toLowerCase().includes("blind"),
     );
 
     // Scene 7 must have a knowledge claim AND its value must differ from
@@ -386,9 +394,7 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
     const s6FirstValue = s6KnowledgeClaims[0]?.value.toLowerCase() ?? "";
     const s7HasKnowledge =
       s7KnowledgeClaims.length > 0 &&
-      s7KnowledgeClaims.some(
-        (c) => c.value.toLowerCase() !== s6FirstValue
-      );
+      s7KnowledgeClaims.some((c) => c.value.toLowerCase() !== s6FirstValue);
 
     const pass = s6HasUnaware && s7HasKnowledge;
 
@@ -415,14 +421,14 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
         (ev.action.toLowerCase().includes("watch") ||
           ev.object?.toLowerCase().includes("watch") ||
           ev.subject.toLowerCase().includes("watch") ||
-          ev.description.toLowerCase().includes("watch"))
+          ev.description.toLowerCase().includes("watch")),
     );
 
     // Also accept: carry event where object is signal watch
     const carryEvent = events.find(
       (ev) =>
         ev.object?.toLowerCase().includes("watch") ||
-        ev.action.toLowerCase().includes("watch")
+        ev.action.toLowerCase().includes("watch"),
     );
 
     const pass = !!(watchEvent || carryEvent);
@@ -442,10 +448,7 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
     const s3 = getExtraction(3);
     const s4 = getExtraction(4);
 
-    const allClaims = [
-      ...(s3?.claims ?? []),
-      ...(s4?.claims ?? []),
-    ];
+    const allClaims = [...(s3?.claims ?? []), ...(s4?.claims ?? [])];
 
     const watchClaim = allClaims.find(
       (c) =>
@@ -454,7 +457,7 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
         (c.property.toLowerCase().includes("possession") ||
           c.property.toLowerCase().includes("wear") ||
           c.property.toLowerCase().includes("carry") ||
-          c.property.toLowerCase().includes("watch"))
+          c.property.toLowerCase().includes("watch")),
     );
 
     // Also accept: watch entity with possession claim pointing to Clara
@@ -464,7 +467,7 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
         (c.property.toLowerCase().includes("possession") ||
           c.property.toLowerCase().includes("location") ||
           c.property.toLowerCase().includes("owner")) &&
-        c.value.toLowerCase().includes("clara")
+        c.value.toLowerCase().includes("clara"),
     );
 
     const pass = !!(watchClaim || watchEntityClaim);
@@ -513,25 +516,24 @@ function runCriteria(results: SceneResult[]): CriterionResult[] {
   // ─── C6: No scene with zero claims ───────────────────────────────────────
   {
     const zeroClaims = results.filter(
-      (r) => r.status === "ok" && (r.extraction?.claims.length ?? 0) === 0
+      (r) => r.status === "ok" && (r.extraction?.claims.length ?? 0) === 0,
     );
     const failed = results.filter((r) => r.status === "failed");
 
     const pass = zeroClaims.length === 0 && failed.length === 0;
 
-    const detail =
-      pass
-        ? "All scenes produced at least one claim"
-        : [
-            zeroClaims.length > 0
-              ? `Zero-claim scenes: ${zeroClaims.map((r) => r.sceneNumber).join(", ")}`
-              : "",
-            failed.length > 0
-              ? `Failed scenes: ${failed.map((r) => r.sceneNumber).join(", ")}`
-              : "",
-          ]
-            .filter(Boolean)
-            .join("  |  ");
+    const detail = pass
+      ? "All scenes produced at least one claim"
+      : [
+          zeroClaims.length > 0
+            ? `Zero-claim scenes: ${zeroClaims.map((r) => r.sceneNumber).join(", ")}`
+            : "",
+          failed.length > 0
+            ? `Failed scenes: ${failed.map((r) => r.sceneNumber).join(", ")}`
+            : "",
+        ]
+          .filter(Boolean)
+          .join("  |  ");
 
     criteria.push({
       id: "C6",

@@ -1,5 +1,11 @@
 import EventEmitter from "events";
-import { LlmAgent, FunctionTool, AgentTool, Gemini, InMemoryRunner } from "@google/adk";
+import {
+  LlmAgent,
+  FunctionTool,
+  AgentTool,
+  Gemini,
+  InMemoryRunner,
+} from "@google/adk";
 import { config } from "../../config/index.js";
 import {
   runIngestionPipeline,
@@ -19,7 +25,7 @@ import {
 } from "./monitoring.js";
 import { log } from "../../observability/logger.js";
 import type { SpoilerBoundaryEntry } from "../../types/index.js";
-import { z } from 'zod';
+import { z } from "zod";
 
 // =============================================================================
 // Director — ADK LlmAgent
@@ -103,13 +109,16 @@ const runIngestionPipelineTool = new FunctionTool({
     "Processes all scenes for a story unit sequentially. Writes entities, " +
     "claims, and events to ClickHouse. Emits SSE progress events. " +
     "Automatically triggers Guardian passes on completion.",
-    parameters: z.object({
-        storyUnitId: z.string().uuid().describe(
-          "The UUID of the story unit to ingest. All scenes for this unit " +
-          "must already exist in ClickHouse before calling this tool."
-        ),
-    }),
-  execute: async ( { storyUnitId } ) => {
+  parameters: z.object({
+    storyUnitId: z
+      .string()
+      .uuid()
+      .describe(
+        "The UUID of the story unit to ingest. All scenes for this unit " +
+          "must already exist in ClickHouse before calling this tool.",
+      ),
+  }),
+  execute: async ({ storyUnitId }) => {
     // The tool interface doesn't carry the EventEmitter — that's managed
     // at the HTTP layer. When called via ADK, we create a detached emitter
     // so the pipeline logic runs without SSE. Route handlers use the typed
@@ -124,11 +133,14 @@ const runWithinUnitGuardianTool = new FunctionTool({
   description:
     "Triggers the Continuity Guardian within-unit pass for a story unit. " +
     "Detects claim conflicts within a single film or episode.",
-    parameters: z.object({
-        storyUnitId: z.string().uuid().describe(
-          "The UUID of the story unit to run the within-unit Guardian pass on."
-        ),
-    }),
+  parameters: z.object({
+    storyUnitId: z
+      .string()
+      .uuid()
+      .describe(
+        "The UUID of the story unit to run the within-unit Guardian pass on.",
+      ),
+  }),
   execute: async ({ storyUnitId }) => {
     return runWithinUnitGuardian(storyUnitId);
   },
@@ -139,12 +151,15 @@ const runCrossUnitGuardianTool = new FunctionTool({
   description:
     "Triggers the Continuity Guardian cross-unit pass for a universe. " +
     "Detects claim conflicts spanning multiple story units.",
-    parameters: z.object({
-        universeId: z.string().uuid().describe(
-          "The UUID of the universe to run the cross-unit Guardian pass on. " +
-          "All story units within this universe will be compared against each other."
-        ),
-    }),
+  parameters: z.object({
+    universeId: z
+      .string()
+      .uuid()
+      .describe(
+        "The UUID of the universe to run the cross-unit Guardian pass on. " +
+          "All story units within this universe will be compared against each other.",
+      ),
+  }),
   execute: async ({ universeId }) => {
     return runCrossUnitGuardian(universeId);
   },
@@ -155,32 +170,42 @@ const runCompanionQueryTool = new FunctionTool({
   description:
     "Delegates a viewer question to the Audience Companion. " +
     "Enforces the spoiler boundary at the SQL level before answering.",
-    parameters: z.object({
-        universeId: z.string().uuid().describe(
-          "The UUID of the universe the viewer's question is about."
-        ),
-        question: z.string().min(1).describe(
-          "The viewer's natural-language question about the story. " +
-          "Only content within the spoiler boundary will be used to answer."
-        ),
-        boundary: z.array(z.object({
-            storyUnitId: z.string().uuid().describe(
-              "The UUID of a story unit the viewer has watched."
-            ),
-            upToScene: z.coerce.number().int().nonnegative().describe(
+  parameters: z.object({
+    universeId: z
+      .string()
+      .uuid()
+      .describe("The UUID of the universe the viewer's question is about."),
+    question: z
+      .string()
+      .min(1)
+      .describe(
+        "The viewer's natural-language question about the story. " +
+          "Only content within the spoiler boundary will be used to answer.",
+      ),
+    boundary: z
+      .array(
+        z.object({
+          storyUnitId: z
+            .string()
+            .uuid()
+            .describe("The UUID of a story unit the viewer has watched."),
+          upToScene: z.coerce
+            .number()
+            .int()
+            .nonnegative()
+            .describe(
               "The last scene number the viewer has watched in this unit (inclusive). " +
-              "Use 9999 to indicate the viewer has watched the entire unit."
+                "Use 9999 to indicate the viewer has watched the entire unit.",
             ),
-        })).min(1).describe(
-          "The viewer's spoiler boundary: a list of watched story units and " +
-          "how far into each they have watched. Units not listed are fully excluded."
-        ),
-    }),
-  execute: async ({
-    universeId,
-    question,
-    boundary,
-  }) => {
+        }),
+      )
+      .min(1)
+      .describe(
+        "The viewer's spoiler boundary: a list of watched story units and " +
+          "how far into each they have watched. Units not listed are fully excluded.",
+      ),
+  }),
+  execute: async ({ universeId, question, boundary }) => {
     return runCompanionQuery(universeId, question, boundary);
   },
 });
@@ -194,12 +219,15 @@ const checkIngestionHealthTool = new FunctionTool({
   description:
     "Inspects the ingestion results for a story unit. Returns a health " +
     "report flagging failed scenes, low claim counts, and duration anomalies.",
-    parameters: z.object({
-        storyUnitId: z.string().uuid().describe(
-          "The UUID of the story unit to check. Returns a health report " +
-          "with anomaly flags for failed scenes and low claim counts."
-        ),
-    }),
+  parameters: z.object({
+    storyUnitId: z
+      .string()
+      .uuid()
+      .describe(
+        "The UUID of the story unit to check. Returns a health report " +
+          "with anomaly flags for failed scenes and low claim counts.",
+      ),
+  }),
   execute: async ({ storyUnitId }) => {
     return checkIngestionHealth(storyUnitId);
   },
@@ -210,19 +238,21 @@ const retrySceneTool = new FunctionTool({
   description:
     "Re-runs the Story Analyst for a single scene. Use when a scene " +
     "produced zero claims, failed, or was flagged as anomalous.",
-    parameters: z.object({
-        storyUnitId: z.string().uuid().describe(
-          "The UUID of the story unit containing the scene to retry."
-        ),
-        sceneNumber: z.coerce.number().int().min(1).describe(
-          "The 1-based scene number to retry. Must match the scene_number " +
-          "stored in ClickHouse for this story unit."
-        ),
-    }),
-  execute: async ({
-    storyUnitId,
-    sceneNumber,
-  }) => {
+  parameters: z.object({
+    storyUnitId: z
+      .string()
+      .uuid()
+      .describe("The UUID of the story unit containing the scene to retry."),
+    sceneNumber: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .describe(
+        "The 1-based scene number to retry. Must match the scene_number " +
+          "stored in ClickHouse for this story unit.",
+      ),
+  }),
+  execute: async ({ storyUnitId, sceneNumber }) => {
     return retryScene(storyUnitId, sceneNumber);
   },
 });
@@ -232,19 +262,19 @@ const flagForReviewTool = new FunctionTool({
   description:
     "Writes a critical-severity Loki alert for a universe or unit. " +
     "Called when anomalies persist after retry.",
-    parameters: z.object({
-        universeId: z.string().uuid().describe(
-          "The UUID of the universe the alert belongs to."
-        ),
-        context: z.record(z.string(), z.unknown()).describe(
-          "Structured context about the problem that triggered the review flag. " +
-          "Include storyUnitId, sceneNumber, reason, and any relevant counts or errors."
-        ),
-    }),
-  execute: async ({
-    universeId,
-    context,
-  }) => {
+  parameters: z.object({
+    universeId: z
+      .string()
+      .uuid()
+      .describe("The UUID of the universe the alert belongs to."),
+    context: z
+      .record(z.string(), z.unknown())
+      .describe(
+        "Structured context about the problem that triggered the review flag. " +
+          "Include storyUnitId, sceneNumber, reason, and any relevant counts or errors.",
+      ),
+  }),
+  execute: async ({ universeId, context }) => {
     return flagForReview(universeId, context);
   },
 });
@@ -323,7 +353,7 @@ class Director {
    */
   ingestStoryUnit(
     storyUnitId: string,
-    emitter: EventEmitter
+    emitter: EventEmitter,
   ): Promise<IngestionSummary> {
     return runIngestionPipeline(storyUnitId, emitter, (sceneNumber) => {
       log({
@@ -360,7 +390,7 @@ class Director {
   async askCompanion(
     universeId: string,
     question: string,
-    boundary: SpoilerBoundaryEntry[]
+    boundary: SpoilerBoundaryEntry[],
   ): Promise<CompanionAnswer> {
     return runCompanionQuery(universeId, question, boundary);
   }
@@ -368,14 +398,16 @@ class Director {
   // ── Monitoring ─────────────────────────────────────────────────────────────
 
   /** Health report for a story unit's ingestion results. */
-  async getIngestionHealth(storyUnitId: string): Promise<IngestionHealthReport> {
+  async getIngestionHealth(
+    storyUnitId: string,
+  ): Promise<IngestionHealthReport> {
     return checkIngestionHealth(storyUnitId);
   }
 
   /** Re-run Story Analyst for a single scene. */
   async retrySingleScene(
     storyUnitId: string,
-    sceneNumber: number
+    sceneNumber: number,
   ): Promise<RetryResult> {
     return retryScene(storyUnitId, sceneNumber);
   }
@@ -383,7 +415,7 @@ class Director {
   /** Write a critical Loki alert. */
   async flagUnit(
     universeId: string,
-    context: Record<string, unknown>
+    context: Record<string, unknown>,
   ): Promise<void> {
     return flagForReview(universeId, context);
   }

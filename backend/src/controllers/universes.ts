@@ -14,7 +14,10 @@ import type {
 } from "../types/index.js";
 import { MCPOperationError } from "../types/index.js";
 import { director } from "../agents/director/agent.js";
-import type { CompanionAnswer, GuardianSummary } from "../agents/director/orchestration.js";
+import type {
+  CompanionAnswer,
+  GuardianSummary,
+} from "../agents/director/orchestration.js";
 import { handleError } from "../lib/handle-error.js";
 
 // ---------------------------------------------------------------------------
@@ -40,7 +43,7 @@ const AskAboutUniverseSchema = z.object({
     z.object({
       story_unit_id: z.uuid(),
       up_to_scene: z.coerce.number().int().nonnegative(),
-    })
+    }),
   ),
 });
 
@@ -247,7 +250,10 @@ export async function askAboutUniverseHttp(req: Request, res: Response) {
     const answer = await director.askCompanion(
       universeId,
       question,
-      boundary.map((b) => ({ storyUnitId: b.story_unit_id, upToScene: b.up_to_scene }))
+      boundary.map((b) => ({
+        storyUnitId: b.story_unit_id,
+        upToScene: b.up_to_scene,
+      })),
     );
     return res.status(200).json({
       status: "success",

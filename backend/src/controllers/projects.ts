@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import z from "zod";
-import { createProject, getFindingsForProject } from "../mcp/clickhouse/operations.js";
+import {
+  createProject,
+  getFindingsForProject,
+} from "../mcp/clickhouse/operations.js";
 import type { ContinuityFinding, Project } from "../types/index.js";
 import { handleError } from "../lib/handle-error.js";
 

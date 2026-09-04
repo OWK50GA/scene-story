@@ -65,8 +65,12 @@ function rowToStoryUnit(r: Record<string, unknown>): StoryUnit {
     seasonNumber: r.season_number != null ? Number(r.season_number) : null,
     episodeNumber: r.episode_number != null ? Number(r.episode_number) : null,
     inUniversePeriod: r.in_universe_period as string,
-    inUniverseDateStart: r.in_universe_date_start != null ? Number(r.in_universe_date_start) : null,
-    inUniverseDateEnd: r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
+    inUniverseDateStart:
+      r.in_universe_date_start != null
+        ? Number(r.in_universe_date_start)
+        : null,
+    inUniverseDateEnd:
+      r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
     releaseOrder: Number(r.release_order),
     ingestionStatus: r.ingestion_status as IngestionStatus,
     sceneCount: Number(r.scene_count),
@@ -82,7 +86,8 @@ function rowToEntity(r: Record<string, unknown>): UniverseEntity {
     entityType: r.entity_type as EntityType,
     parentEntityId: (r.parent_entity_id as string | null) ?? null,
     description: r.description as string,
-    firstAppearanceUnitId: (r.first_appearance_unit_id as string | null) ?? null,
+    firstAppearanceUnitId:
+      (r.first_appearance_unit_id as string | null) ?? null,
     createdAt: new Date(r.created_at as string),
   };
 }
@@ -123,8 +128,12 @@ function rowToClaim(r: Record<string, unknown>): Claim {
     property: r.property as string,
     value: r.value as string,
     inUniversePeriod: r.in_universe_period as string,
-    inUniverseDateStart: r.in_universe_date_start != null ? Number(r.in_universe_date_start) : null,
-    inUniverseDateEnd: r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
+    inUniverseDateStart:
+      r.in_universe_date_start != null
+        ? Number(r.in_universe_date_start)
+        : null,
+    inUniverseDateEnd:
+      r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
     validFromScene: Number(r.valid_from_scene),
     validToScene: r.valid_to_scene != null ? Number(r.valid_to_scene) : null,
     sourceType: r.source_type as SourceType,
@@ -180,7 +189,7 @@ async function select<T>(
   operation: string,
   query: string,
   params: Record<string, unknown>,
-  mapper: (row: Record<string, unknown>) => T
+  mapper: (row: Record<string, unknown>) => T,
 ): Promise<T[]> {
   try {
     const result = await ch.query({
@@ -195,7 +204,7 @@ async function select<T>(
       operation,
       "clickhouse.query_failed",
       `Query failed in ${operation}: ${(err as Error).message}`,
-      err
+      err,
     );
   }
 }
@@ -208,7 +217,7 @@ async function select<T>(
 async function command(
   operation: string,
   query: string,
-  params: Record<string, unknown>
+  params: Record<string, unknown>,
 ): Promise<void> {
   try {
     await ch.command({
@@ -220,7 +229,7 @@ async function command(
       operation,
       "clickhouse.command_failed",
       `Command failed in ${operation}: ${(err as Error).message}`,
-      err
+      err,
     );
   }
 }
@@ -235,7 +244,7 @@ const CreateUniverseInput = z.object({
 });
 
 export async function createUniverse(
-  input: z.infer<typeof CreateUniverseInput>
+  input: z.infer<typeof CreateUniverseInput>,
 ): Promise<Universe> {
   const parsed = CreateUniverseInput.parse(input);
   const universeId = uuid();
@@ -244,13 +253,18 @@ export async function createUniverse(
     name: parsed.name,
     description: parsed.description,
   });
-  const rows = await select("createUniverse", Q.SELECT_UNIVERSE, { universe_id: universeId }, rowToUniverse);
+  const rows = await select(
+    "createUniverse",
+    Q.SELECT_UNIVERSE,
+    { universe_id: universeId },
+    rowToUniverse,
+  );
   const created = rows[0];
   if (!created) {
     throw new MCPOperationError(
       "createUniverse",
       "universe.read_after_write_failed",
-      `Universe ${universeId} was inserted but is not yet readable`
+      `Universe ${universeId} was inserted but is not yet readable`,
     );
   }
   return created;
@@ -261,9 +275,18 @@ export async function listUniverses(): Promise<Universe[]> {
 }
 
 export async function getUniverse(universeId: string): Promise<Universe> {
-  const rows = await select("getUniverse", Q.SELECT_UNIVERSE, { universe_id: universeId }, rowToUniverse);
+  const rows = await select(
+    "getUniverse",
+    Q.SELECT_UNIVERSE,
+    { universe_id: universeId },
+    rowToUniverse,
+  );
   if (rows.length === 0) {
-    throw new MCPOperationError("getUniverse", "universe.not_found", `Universe ${universeId} not found`);
+    throw new MCPOperationError(
+      "getUniverse",
+      "universe.not_found",
+      `Universe ${universeId} not found`,
+    );
   }
   return rows[0]!;
 }
@@ -280,7 +303,7 @@ const CreateProjectInput = z.object({
 });
 
 export async function createProject(
-  input: z.infer<typeof CreateProjectInput>
+  input: z.infer<typeof CreateProjectInput>,
 ): Promise<Project> {
   const parsed = CreateProjectInput.parse(input);
   const projectId = uuid();
@@ -291,14 +314,28 @@ export async function createProject(
     type: parsed.type,
     canon_tier: parsed.canonTier,
   });
-  const rows = await select("createProject", Q.SELECT_PROJECT, { project_id: projectId }, rowToProject);
+  const rows = await select(
+    "createProject",
+    Q.SELECT_PROJECT,
+    { project_id: projectId },
+    rowToProject,
+  );
   return rows[0]!;
 }
 
 export async function getProject(projectId: string): Promise<Project> {
-  const rows = await select("getProject", Q.SELECT_PROJECT, { project_id: projectId }, rowToProject);
+  const rows = await select(
+    "getProject",
+    Q.SELECT_PROJECT,
+    { project_id: projectId },
+    rowToProject,
+  );
   if (rows.length === 0) {
-    throw new MCPOperationError("getProject", "project.not_found", `Project ${projectId} not found`);
+    throw new MCPOperationError(
+      "getProject",
+      "project.not_found",
+      `Project ${projectId} not found`,
+    );
   }
   return rows[0]!;
 }
@@ -321,7 +358,7 @@ export const CreateStoryUnitInput = z.object({
 });
 
 export async function createStoryUnit(
-  input: z.infer<typeof CreateStoryUnitInput>
+  input: z.infer<typeof CreateStoryUnitInput>,
 ): Promise<StoryUnit> {
   const parsed = CreateStoryUnitInput.parse(input);
   const storyUnitId = uuid();
@@ -338,25 +375,46 @@ export async function createStoryUnit(
     in_universe_date_end: parsed.inUniverseDateEnd ?? null,
     release_order: parsed.releaseOrder,
   });
-  const rows = await select("createStoryUnit", Q.SELECT_STORY_UNIT, { story_unit_id: storyUnitId }, rowToStoryUnit);
+  const rows = await select(
+    "createStoryUnit",
+    Q.SELECT_STORY_UNIT,
+    { story_unit_id: storyUnitId },
+    rowToStoryUnit,
+  );
   return rows[0]!;
 }
 
 export async function getStoryUnit(storyUnitId: string): Promise<StoryUnit> {
-  const rows = await select("getStoryUnit", Q.SELECT_STORY_UNIT, { story_unit_id: storyUnitId }, rowToStoryUnit);
+  const rows = await select(
+    "getStoryUnit",
+    Q.SELECT_STORY_UNIT,
+    { story_unit_id: storyUnitId },
+    rowToStoryUnit,
+  );
   if (rows.length === 0) {
-    throw new MCPOperationError("getStoryUnit", "unit.not_found", `Story unit ${storyUnitId} not found`);
+    throw new MCPOperationError(
+      "getStoryUnit",
+      "unit.not_found",
+      `Story unit ${storyUnitId} not found`,
+    );
   }
   return rows[0]!;
 }
 
-export async function getStoryUnitsForUniverse(universeId: string): Promise<StoryUnit[]> {
-  return select("getStoryUnitsForUniverse", Q.SELECT_STORY_UNITS_FOR_UNIVERSE, { universe_id: universeId }, rowToStoryUnit);
+export async function getStoryUnitsForUniverse(
+  universeId: string,
+): Promise<StoryUnit[]> {
+  return select(
+    "getStoryUnitsForUniverse",
+    Q.SELECT_STORY_UNITS_FOR_UNIVERSE,
+    { universe_id: universeId },
+    rowToStoryUnit,
+  );
 }
 
 export async function updateStoryUnitStatus(
   storyUnitId: string,
-  status: IngestionStatus
+  status: IngestionStatus,
 ): Promise<void> {
   await command("updateStoryUnitStatus", Q.UPDATE_STORY_UNIT_STATUS, {
     story_unit_id: storyUnitId,
@@ -367,7 +425,7 @@ export async function updateStoryUnitStatus(
 export async function updateStoryUnitCounts(
   storyUnitId: string,
   sceneCount: number,
-  claimCount: number
+  claimCount: number,
 ): Promise<void> {
   await command("updateStoryUnitCounts", Q.UPDATE_STORY_UNIT_COUNTS, {
     story_unit_id: storyUnitId,
@@ -390,7 +448,7 @@ const CreateEntityInput = z.object({
 });
 
 export async function createEntity(
-  input: z.infer<typeof CreateEntityInput>
+  input: z.infer<typeof CreateEntityInput>,
 ): Promise<UniverseEntity> {
   const parsed = CreateEntityInput.parse(input);
   const entityId = uuid();
@@ -403,14 +461,28 @@ export async function createEntity(
     description: parsed.description,
     first_appearance_unit_id: parsed.firstAppearanceUnitId ?? null,
   });
-  const rows = await select("createEntity", Q.SELECT_ENTITY, { entity_id: entityId }, rowToEntity);
+  const rows = await select(
+    "createEntity",
+    Q.SELECT_ENTITY,
+    { entity_id: entityId },
+    rowToEntity,
+  );
   return rows[0]!;
 }
 
 export async function getEntity(entityId: string): Promise<UniverseEntity> {
-  const rows = await select("getEntity", Q.SELECT_ENTITY, { entity_id: entityId }, rowToEntity);
+  const rows = await select(
+    "getEntity",
+    Q.SELECT_ENTITY,
+    { entity_id: entityId },
+    rowToEntity,
+  );
   if (rows.length === 0) {
-    throw new MCPOperationError("getEntity", "entity.not_found", `Entity ${entityId} not found`);
+    throw new MCPOperationError(
+      "getEntity",
+      "entity.not_found",
+      `Entity ${entityId} not found`,
+    );
   }
   return rows[0]!;
 }
@@ -421,21 +493,38 @@ export async function getEntity(entityId: string): Promise<UniverseEntity> {
  */
 export async function findEntityByName(
   universeId: string,
-  name: string
+  name: string,
 ): Promise<UniverseEntity | null> {
   // 1. Exact match
-  let rows = await select("findEntityByName", Q.SELECT_ENTITY_BY_NAME_EXACT, { universe_id: universeId, name }, rowToEntity);
+  let rows = await select(
+    "findEntityByName",
+    Q.SELECT_ENTITY_BY_NAME_EXACT,
+    { universe_id: universeId, name },
+    rowToEntity,
+  );
   if (rows.length > 0) return rows[0]!;
 
   // 2. Case-insensitive match
-  rows = await select("findEntityByName", Q.SELECT_ENTITY_BY_NAME_ILIKE, { universe_id: universeId, name }, rowToEntity);
+  rows = await select(
+    "findEntityByName",
+    Q.SELECT_ENTITY_BY_NAME_ILIKE,
+    { universe_id: universeId, name },
+    rowToEntity,
+  );
   if (rows.length > 0) return rows[0]!;
 
   return null;
 }
 
-export async function getEntitiesForUniverse(universeId: string): Promise<UniverseEntity[]> {
-  return select("getEntitiesForUniverse", Q.SELECT_ENTITIES_BY_UNIVERSE, { universe_id: universeId }, rowToEntity);
+export async function getEntitiesForUniverse(
+  universeId: string,
+): Promise<UniverseEntity[]> {
+  return select(
+    "getEntitiesForUniverse",
+    Q.SELECT_ENTITIES_BY_UNIVERSE,
+    { universe_id: universeId },
+    rowToEntity,
+  );
 }
 
 /**
@@ -444,7 +533,7 @@ export async function getEntitiesForUniverse(universeId: string): Promise<Univer
  * The caller merges claims with child claims taking precedence.
  */
 export async function getEntityWithAncestors(
-  entityId: string
+  entityId: string,
 ): Promise<{ entity: UniverseEntity; ancestors: UniverseEntity[] }> {
   const entity = await getEntity(entityId);
   const ancestors: UniverseEntity[] = [];
@@ -476,13 +565,14 @@ const WriteTemporalRelationInput = z.object({
 });
 
 export async function writeTemporalRelation(
-  input: z.infer<typeof WriteTemporalRelationInput>
+  input: z.infer<typeof WriteTemporalRelationInput>,
 ): Promise<void> {
   const parsed = WriteTemporalRelationInput.parse(input);
   // Always store with the lexicographically smaller ID as unit_a to prevent duplicates.
-  const [a, b] = parsed.unitAId < parsed.unitBId
-    ? [parsed.unitAId, parsed.unitBId]
-    : [parsed.unitBId, parsed.unitAId];
+  const [a, b] =
+    parsed.unitAId < parsed.unitBId
+      ? [parsed.unitAId, parsed.unitBId]
+      : [parsed.unitBId, parsed.unitAId];
   await command("writeTemporalRelation", Q.INSERT_TEMPORAL_RELATION, {
     unit_a_id: a,
     unit_b_id: b,
@@ -495,7 +585,7 @@ export async function writeTemporalRelation(
 export async function getTemporalRelation(
   universeId: string,
   unitAId: string,
-  unitBId: string
+  unitBId: string,
 ): Promise<TemporalRelation | null> {
   // Normalise order to match how we store.
   const [a, b] = unitAId < unitBId ? [unitAId, unitBId] : [unitBId, unitAId];
@@ -503,7 +593,7 @@ export async function getTemporalRelation(
     "getTemporalRelation",
     Q.SELECT_TEMPORAL_RELATION,
     { universe_id: universeId, unit_a_id: a, unit_b_id: b },
-    rowToTemporalRelation
+    rowToTemporalRelation,
   );
   return rows[0] ?? null;
 }
@@ -522,7 +612,7 @@ const InsertSceneInput = z.object({
 });
 
 export async function insertScene(
-  input: z.infer<typeof InsertSceneInput>
+  input: z.infer<typeof InsertSceneInput>,
 ): Promise<Scene> {
   const parsed = InsertSceneInput.parse(input);
   const sceneId = uuid();
@@ -539,21 +629,28 @@ export async function insertScene(
     "insertScene",
     Q.SELECT_SCENE,
     { story_unit_id: parsed.storyUnitId, scene_number: parsed.sceneNumber },
-    rowToScene
+    rowToScene,
   );
   return rows[0]!;
 }
 
 export async function getScenesForUnit(storyUnitId: string): Promise<Scene[]> {
-  return select("getScenesForUnit", Q.SELECT_SCENES_FOR_UNIT, { story_unit_id: storyUnitId }, rowToScene);
+  return select(
+    "getScenesForUnit",
+    Q.SELECT_SCENES_FOR_UNIT,
+    { story_unit_id: storyUnitId },
+    rowToScene,
+  );
 }
 
-export async function getFailedSceneNumbers(storyUnitId: string): Promise<number[]> {
+export async function getFailedSceneNumbers(
+  storyUnitId: string,
+): Promise<number[]> {
   const rows = await select(
     "getFailedSceneNumbers",
     Q.SELECT_FAILED_SCENES,
     { story_unit_id: storyUnitId },
-    (r) => Number(r.scene_number)
+    (r) => Number(r.scene_number),
   );
   return rows;
 }
@@ -561,7 +658,7 @@ export async function getFailedSceneNumbers(storyUnitId: string): Promise<number
 export async function updateSceneStatus(
   storyUnitId: string,
   sceneNumber: number,
-  status: SceneIngestionStatus
+  status: SceneIngestionStatus,
 ): Promise<void> {
   await command("updateSceneStatus", Q.UPDATE_SCENE_STATUS, {
     story_unit_id: storyUnitId,
@@ -595,7 +692,7 @@ const WriteClaimInput = z.object({
 });
 
 export async function writeClaim(
-  input: z.infer<typeof WriteClaimInput>
+  input: z.infer<typeof WriteClaimInput>,
 ): Promise<Claim> {
   const parsed = WriteClaimInput.parse(input);
 
@@ -606,7 +703,7 @@ export async function writeClaim(
       "writeClaim",
       "claim.confidence_out_of_range",
       `Confidence ${parsed.confidence} is out of range for source_type "${parsed.sourceType}" ` +
-        `(expected ${range.min}–${range.max})`
+        `(expected ${range.min}–${range.max})`,
     );
   }
 
@@ -638,7 +735,7 @@ export async function writeClaim(
     "writeClaim",
     `SELECT * FROM lmm.claims WHERE claim_id = {claim_id: String} LIMIT 1`,
     { claim_id: claimId },
-    rowToClaim
+    rowToClaim,
   );
   return rows[0]!;
 }
@@ -652,20 +749,26 @@ export async function writeClaim(
 export async function getCurrentState(
   storyUnitId: string,
   entityIds: string[],
-  upToScene: number
-): Promise<Array<Claim & { entityName: string; parentEntityId: string | null }>> {
+  upToScene: number,
+): Promise<
+  Array<Claim & { entityName: string; parentEntityId: string | null }>
+> {
   if (entityIds.length === 0) return [];
 
   // Fetch active claims for the requested entities.
   const directRows = await select(
     "getCurrentState",
     Q.SELECT_ACTIVE_CLAIMS_FOR_ENTITIES,
-    { story_unit_id: storyUnitId, entity_ids: entityIds, up_to_scene: upToScene },
+    {
+      story_unit_id: storyUnitId,
+      entity_ids: entityIds,
+      up_to_scene: upToScene,
+    },
     (r) => ({
       ...rowToClaim(r),
       entityName: r.entity_name as string,
       parentEntityId: (r.parent_entity_id as string | null) ?? null,
-    })
+    }),
   );
 
   // All rows are already scoped to the requested entity IDs by the SQL filter.
@@ -673,7 +776,9 @@ export async function getCurrentState(
 
   // Collect parent entity IDs that need inherited claims fetched.
   const parentIds = new Set(
-    direct.map((c) => c.parentEntityId).filter((id): id is string => id !== null)
+    direct
+      .map((c) => c.parentEntityId)
+      .filter((id): id is string => id !== null),
   );
   // Remove any parent IDs we already have direct claims for.
   direct.forEach((c) => parentIds.delete(c.universeEntityId));
@@ -681,28 +786,35 @@ export async function getCurrentState(
   if (parentIds.size === 0) return direct;
 
   // Derive parent claims from the already-fetched directRows — no second query needed.
-  const parentClaims = directRows.filter((c) => parentIds.has(c.universeEntityId));
+  const parentClaims = directRows.filter((c) =>
+    parentIds.has(c.universeEntityId),
+  );
 
   // Child claims take precedence: only include a parent claim if the child
   // has no claim for the same property.
   const directProperties = new Set(
-    direct.map((c) => `${c.universeEntityId}:${c.property}`)
+    direct.map((c) => `${c.universeEntityId}:${c.property}`),
   );
   const inherited = parentClaims.filter(
-    (c) => !directProperties.has(`${c.universeEntityId}:${c.property}`)
+    (c) => !directProperties.has(`${c.universeEntityId}:${c.property}`),
   );
 
   return [...direct, ...inherited];
 }
 
 export async function getEntityHistory(entityId: string): Promise<Claim[]> {
-  return select("getEntityHistory", Q.SELECT_ENTITY_HISTORY, { entity_id: entityId }, rowToClaim);
+  return select(
+    "getEntityHistory",
+    Q.SELECT_ENTITY_HISTORY,
+    { entity_id: entityId },
+    rowToClaim,
+  );
 }
 
 // Guardian-only mutation — update valid_to_scene on a claim.
 export async function updateClaimValidTo(
   claimId: string,
-  validToScene: number
+  validToScene: number,
 ): Promise<void> {
   await command("updateClaimValidTo", Q.UPDATE_CLAIM_VALID_TO, {
     claim_id: claimId,
@@ -713,7 +825,7 @@ export async function updateClaimValidTo(
 // Guardian-only mutation — mark a claim as superseded by a higher canon-tier claim.
 export async function markClaimSupersededByCanon(
   claimId: string,
-  supersedingClaimId: string
+  supersedingClaimId: string,
 ): Promise<void> {
   await command("markClaimSupersededByCanon", Q.UPDATE_CLAIM_SUPERSEDED, {
     claim_id: claimId,
@@ -739,7 +851,7 @@ export type WithinUnitConflictRow = {
 };
 
 export async function findWithinUnitConflicts(
-  storyUnitId: string
+  storyUnitId: string,
 ): Promise<WithinUnitConflictRow[]> {
   return select(
     "findWithinUnitConflicts",
@@ -756,7 +868,7 @@ export async function findWithinUnitConflicts(
       sceneB: Number(r.scene_b),
       confidenceA: Number(r.confidence_a),
       confidenceB: Number(r.confidence_b),
-    })
+    }),
   );
 }
 
@@ -780,7 +892,7 @@ export type CrossUnitConflictRow = {
 };
 
 export async function findCrossUnitConflicts(
-  universeId: string
+  universeId: string,
 ): Promise<CrossUnitConflictRow[]> {
   return select(
     "findCrossUnitConflicts",
@@ -803,7 +915,7 @@ export async function findCrossUnitConflicts(
       tierB: Number(r.tier_b),
       confidenceA: Number(r.confidence_a),
       confidenceB: Number(r.confidence_b),
-    })
+    }),
   );
 }
 
@@ -824,7 +936,7 @@ const WriteEventInput = z.object({
 });
 
 export async function writeEvent(
-  input: z.infer<typeof WriteEventInput>
+  input: z.infer<typeof WriteEventInput>,
 ): Promise<void> {
   const parsed = WriteEventInput.parse(input);
   await command("writeEvent", Q.INSERT_EVENT, {
@@ -844,13 +956,13 @@ export async function writeEvent(
 export async function getEventsBetweenScenes(
   storyUnitId: string,
   fromScene: number,
-  toScene: number
+  toScene: number,
 ): Promise<Event[]> {
   return select(
     "getEventsBetweenScenes",
     Q.SELECT_EVENTS_BETWEEN_SCENES,
     { story_unit_id: storyUnitId, from_scene: fromScene, to_scene: toScene },
-    rowToEvent
+    rowToEvent,
   );
 }
 
@@ -873,7 +985,7 @@ const WriteFindingInput = z.object({
 });
 
 export async function writeFinding(
-  input: z.infer<typeof WriteFindingInput>
+  input: z.infer<typeof WriteFindingInput>,
 ): Promise<ContinuityFinding> {
   const parsed = WriteFindingInput.parse(input);
   const findingId = uuid();
@@ -895,21 +1007,30 @@ export async function writeFinding(
     "writeFinding",
     `SELECT * FROM lmm.continuity_findings WHERE finding_id = {finding_id: String} LIMIT 1`,
     { finding_id: findingId },
-    rowToFinding
+    rowToFinding,
   );
   return rows[0]!;
 }
 
-export async function getFindingsForProject(projectId: string): Promise<ContinuityFinding[]> {
-  return select("getFindingsForProject", Q.SELECT_FINDINGS_FOR_PROJECT, { project_id: projectId }, rowToFinding);
+export async function getFindingsForProject(
+  projectId: string,
+): Promise<ContinuityFinding[]> {
+  return select(
+    "getFindingsForProject",
+    Q.SELECT_FINDINGS_FOR_PROJECT,
+    { project_id: projectId },
+    rowToFinding,
+  );
 }
 
-export async function getCrossUnitFindingsForUniverse(universeId: string): Promise<ContinuityFinding[]> {
+export async function getCrossUnitFindingsForUniverse(
+  universeId: string,
+): Promise<ContinuityFinding[]> {
   return select(
     "getCrossUnitFindingsForUniverse",
     Q.SELECT_CROSS_UNIT_FINDINGS_FOR_UNIVERSE,
     { universe_id: universeId },
-    rowToFinding
+    rowToFinding,
   );
 }
 
@@ -931,17 +1052,19 @@ export async function getCrossUnitFindingsForUniverse(universeId: string): Promi
  */
 export async function getCompanionFacts(
   universeId: string,
-  boundary: SpoilerBoundaryEntry[]
-): Promise<Array<{
-  entityName: string;
-  property: string;
-  value: string;
-  validFromScene: number;
-  sourceSceneNumber: number;
-  inUniversePeriod: string;
-  confidence: number;
-  sourceUnitTitle: string;
-}>> {
+  boundary: SpoilerBoundaryEntry[],
+): Promise<
+  Array<{
+    entityName: string;
+    property: string;
+    value: string;
+    validFromScene: number;
+    sourceSceneNumber: number;
+    inUniversePeriod: string;
+    confidence: number;
+    sourceUnitTitle: string;
+  }>
+> {
   if (boundary.length === 0) return [];
 
   // Validate every entry before building the query.
@@ -949,20 +1072,28 @@ export async function getCompanionFacts(
     storyUnitId: z.uuid(),
     upToScene: z.number().int().nonnegative(),
   });
-  const validatedBoundary = boundary.map((entry) => BoundaryEntrySchema.parse(entry));
+  const validatedBoundary = boundary.map((entry) =>
+    BoundaryEntrySchema.parse(entry),
+  );
 
   // Build the boundary filter: one condition per entry, all validated.
   // Shape: (c.story_unit_id = '<id>' AND c.source_scene_number <= <n>)
   const boundaryConditions = validatedBoundary
-    .map((e) => `(c.story_unit_id = '${e.storyUnitId}' AND c.source_scene_number <= ${e.upToScene})`)
+    .map(
+      (e) =>
+        `(c.story_unit_id = '${e.storyUnitId}' AND c.source_scene_number <= ${e.upToScene})`,
+    )
     .join(" OR ");
 
-  const watchedUnitIds = validatedBoundary.map((e) => `'${e.storyUnitId}'`).join(", ");
+  const watchedUnitIds = validatedBoundary
+    .map((e) => `'${e.storyUnitId}'`)
+    .join(", ");
 
   // Substitute the pre-validated boundary filter into the base query.
-  const query = Q.SELECT_COMPANION_FACTS_BASE
-    .replace("{boundary_filter}", boundaryConditions)
-    .replace("{watched_unit_ids: Array(String)}", watchedUnitIds);
+  const query = Q.SELECT_COMPANION_FACTS_BASE.replace(
+    "{boundary_filter}",
+    boundaryConditions,
+  ).replace("{watched_unit_ids: Array(String)}", watchedUnitIds);
 
   return select(
     "getCompanionFacts",
@@ -977,7 +1108,7 @@ export async function getCompanionFacts(
       inUniversePeriod: r.in_universe_period as string,
       confidence: Number(r.confidence),
       sourceUnitTitle: r.source_unit_title as string,
-    })
+    }),
   );
 }
 
@@ -985,7 +1116,9 @@ export async function getCompanionFacts(
 // World state
 // =============================================================================
 
-export async function getWorldState(universeId: string): Promise<WorldStateEntry[]> {
+export async function getWorldState(
+  universeId: string,
+): Promise<WorldStateEntry[]> {
   return select(
     "getWorldState",
     Q.SELECT_WORLD_STATE,
@@ -998,6 +1131,6 @@ export async function getWorldState(universeId: string): Promise<WorldStateEntry
       sourceUnitTitle: r.source_unit_title as string,
       inUniversePeriod: r.in_universe_period as string,
       canonTier: Number(r.canon_tier) as 1 | 2 | 3,
-    })
+    }),
   );
 }

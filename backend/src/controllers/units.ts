@@ -2,8 +2,18 @@ import { Request, Response } from "express";
 import EventEmitter from "events";
 import multer, { type FileFilterCallback } from "multer";
 import type { Request as ExpressRequest } from "express";
-import { createStoryUnit, CreateStoryUnitInput, getStoryUnit, getFailedSceneNumbers, insertScene } from "../mcp/clickhouse/operations.js";
-import { ContinuityFinding, MCPOperationError, StoryUnit } from "../types/index.js";
+import {
+  createStoryUnit,
+  CreateStoryUnitInput,
+  getStoryUnit,
+  getFailedSceneNumbers,
+  insertScene,
+} from "../mcp/clickhouse/operations.js";
+import {
+  ContinuityFinding,
+  MCPOperationError,
+  StoryUnit,
+} from "../types/index.js";
 import { z } from "zod";
 import { GuardianSummary } from "../agents/director/orchestration.js";
 import { director } from "../agents/director/agent.js";
@@ -27,39 +37,47 @@ const pipelineEmitters = new Map<string, EventEmitter>();
 export const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 10 * 1024 * 1024 },
-  fileFilter(_req: ExpressRequest, file: Express.Multer.File, cb: FileFilterCallback) {
+  fileFilter(
+    _req: ExpressRequest,
+    file: Express.Multer.File,
+    cb: FileFilterCallback,
+  ) {
     const allowed = ["text/plain", "application/pdf"];
     const allowedExt = ["txt", "pdf", "fountain"];
     const ext = file.originalname.toLowerCase().split(".").pop() ?? "";
     if (allowed.includes(file.mimetype) || allowedExt.includes(ext)) {
       cb(null, true);
     } else {
-      cb(new Error(`Unsupported file type: ${file.mimetype}. Accepted: PDF, plain text, Fountain.`));
+      cb(
+        new Error(
+          `Unsupported file type: ${file.mimetype}. Accepted: PDF, plain text, Fountain.`,
+        ),
+      );
     }
   },
 });
 
 const StoryUnitParamSchema = z.object({
-    id: z.uuid(),
-})
+  id: z.uuid(),
+});
 
 function serialiseStoryUnit(s: StoryUnit) {
-    return {
-        story_unit_id: s.storyUnitId,
-        project_id: s.projectId,
-        universe_id: s.universeId,
-        title: s.title,
-        unit_type: s.unitType,
-        season_number: s.seasonNumber,
-        episode_number: s.episodeNumber,
-        in_universe_period: s.inUniversePeriod,
-        in_universe_date_start: s.inUniverseDateStart,
-        in_universe_date_end: s.inUniverseDateEnd,
-        release_order: s.releaseOrder,
-        ingestion_status: s.ingestionStatus,
-        scene_count: s.sceneCount,
-        claim_count: s.claimCount,
-    }
+  return {
+    story_unit_id: s.storyUnitId,
+    project_id: s.projectId,
+    universe_id: s.universeId,
+    title: s.title,
+    unit_type: s.unitType,
+    season_number: s.seasonNumber,
+    episode_number: s.episodeNumber,
+    in_universe_period: s.inUniversePeriod,
+    in_universe_date_start: s.inUniverseDateStart,
+    in_universe_date_end: s.inUniverseDateEnd,
+    release_order: s.releaseOrder,
+    ingestion_status: s.ingestionStatus,
+    scene_count: s.sceneCount,
+    claim_count: s.claimCount,
+  };
 }
 
 function serialiseFinding(f: ContinuityFinding) {
@@ -88,37 +106,38 @@ function serialiseGuardianSummary(s: GuardianSummary) {
 }
 
 export async function createStoryUnitHttp(req: Request, res: Response) {
-    const parsed = CreateStoryUnitInput.safeParse(req.body);
+  const parsed = CreateStoryUnitInput.safeParse(req.body);
 
-    if (!parsed.success) {
-        const issue = parsed.error.issues[0];
-        return res.status(400).json({
-            status: "error",
-            message: `${String(issue.path[0])}: ${issue.message}`,
-        });
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue.path[0])}: ${issue.message}`,
+    });
+  }
+
+  const data = parsed.data;
+
+  if (!data.inUniverseDateStart && !data.inUniverseDateEnd) {
+    if (data.inUniversePeriod.length < 1) {
+      return res.status(400).json({
+        status: "error",
+        message:
+          "Provide precise dates for universe start and end, or a string period",
+      });
     }
+  }
 
-    const data = parsed.data;
+  try {
+    const storyUnit = await createStoryUnit(data);
 
-    if (!data.inUniverseDateStart && !data.inUniverseDateEnd) {
-        if (data.inUniversePeriod.length < 1) {
-            return res.status(400).json({
-                status: "error",
-                message: "Provide precise dates for universe start and end, or a string period",
-            });
-        }
-    }
-    
-    try {
-        const storyUnit = await createStoryUnit(data);
-
-        return res.status(201).json({
-            status: "success",
-            story_unit: serialiseStoryUnit(storyUnit)
-        });
-    } catch (err) {
-        return handleError(err, res);
-    }
+    return res.status(201).json({
+      status: "success",
+      story_unit: serialiseStoryUnit(storyUnit),
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
 }
 
 export async function ingestFileHttp(req: Request, res: Response) {
@@ -135,7 +154,8 @@ export async function ingestFileHttp(req: Request, res: Response) {
   if (!file) {
     return res.status(400).json({
       status: "error",
-      message: "No file uploaded. Send the screenplay as multipart/form-data field 'file'.",
+      message:
+        "No file uploaded. Send the screenplay as multipart/form-data field 'file'.",
     });
   }
 
@@ -158,7 +178,10 @@ export async function ingestFileHttp(req: Request, res: Response) {
     return handleError(err, res);
   }
 
-  if (unit.ingestionStatus === "ingesting" || unit.ingestionStatus === "complete") {
+  if (
+    unit.ingestionStatus === "ingesting" ||
+    unit.ingestionStatus === "complete"
+  ) {
     return res.status(409).json({
       status: "error",
       message: `Cannot ingest: story unit is already in status "${unit.ingestionStatus}".`,
@@ -187,7 +210,8 @@ export async function ingestFileHttp(req: Request, res: Response) {
   if (parsed.scenes.length === 0) {
     return res.status(422).json({
       status: "error",
-      message: "The uploaded file parsed successfully but contains no scene headings.",
+      message:
+        "The uploaded file parsed successfully but contains no scene headings.",
       code: "parse.no_scenes_found",
     });
   }
@@ -265,7 +289,10 @@ export async function getIngestionStatusHttp(req: Request, res: Response) {
   }
 }
 
-export async function getIngestionStatusStreamHttp(req: Request, res: Response) {
+export async function getIngestionStatusStreamHttp(
+  req: Request,
+  res: Response,
+) {
   const parsed = StoryUnitParamSchema.safeParse(req.params);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -289,13 +316,22 @@ export async function getIngestionStatusStreamHttp(req: Request, res: Response) 
     unit = await getStoryUnit(storyUnitId);
   } catch (err) {
     if (err instanceof MCPOperationError && err.code.endsWith("not_found")) {
-      return res.status(404).json({ status: "error", message: err.message, code: err.code });
+      return res
+        .status(404)
+        .json({ status: "error", message: err.message, code: err.code });
     }
-    return res.status(500).json({ status: "error", message: "Internal Server Error" });
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal Server Error" });
   }
 
-  if (unit.ingestionStatus === "complete" || unit.ingestionStatus === "failed") {
-    const failedScenes = await getFailedSceneNumbers(storyUnitId).catch(() => [] as number[]);
+  if (
+    unit.ingestionStatus === "complete" ||
+    unit.ingestionStatus === "failed"
+  ) {
+    const failedScenes = await getFailedSceneNumbers(storyUnitId).catch(
+      () => [] as number[],
+    );
     // Set SSE headers then immediately send the terminal event and close.
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
@@ -316,7 +352,8 @@ export async function getIngestionStatusStreamHttp(req: Request, res: Response) 
     // Unit exists but ingestion hasn't started yet (status: "pending").
     return res.status(409).json({
       status: "error",
-      message: "Ingestion has not been started for this story unit. POST to /ingest first.",
+      message:
+        "Ingestion has not been started for this story unit. POST to /ingest first.",
       code: "ingestion.not_started",
     });
   }
@@ -373,24 +410,24 @@ export async function getIngestionStatusStreamHttp(req: Request, res: Response) 
 }
 
 export async function analyzeStoryUnitHttp(req: Request, res: Response) {
-    const parsed = StoryUnitParamSchema.safeParse(req.params);
+  const parsed = StoryUnitParamSchema.safeParse(req.params);
 
-    if (!parsed.success) {
-        const issue = parsed.error.issues[0];
-        return res.status(400).json({
-            status: "error",
-            message: `${String(issue.path[0])}: ${issue.message}`,
-        });
-    }
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue.path[0])}: ${issue.message}`,
+    });
+  }
 
-    try {
-        const analysis = await director.analyzeUnit(parsed.data.id);
+  try {
+    const analysis = await director.analyzeUnit(parsed.data.id);
 
-        return res.status(200).json({
-            status: "success",
-            data: serialiseGuardianSummary(analysis),
-        });
-    } catch (err) {
-        return handleError(err, res);
-    }
+    return res.status(200).json({
+      status: "success",
+      data: serialiseGuardianSummary(analysis),
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
 }

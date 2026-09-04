@@ -77,7 +77,7 @@ export async function processScene(
   scene: Scene,
   unit: StoryUnit,
   project: Project,
-  sceneTotal: number
+  sceneTotal: number,
 ): Promise<ProcessSceneResult> {
   const start = Date.now();
 
@@ -97,7 +97,7 @@ export async function processScene(
 
   const mentionedEntityIds = scanForMentionedEntities(
     scene.rawText,
-    allUniverseEntities
+    allUniverseEntities,
   );
 
   // ── Step 2: Fetch current known state → context summary ───────────────────
@@ -110,7 +110,7 @@ export async function processScene(
       const stateRows = await getCurrentState(
         unit.storyUnitId,
         mentionedEntityIds,
-        scene.sceneNumber - 1
+        scene.sceneNumber - 1,
       );
       contextSummary = formatContextSummary(stateRows, allUniverseEntities);
     } catch {
@@ -127,11 +127,14 @@ export async function processScene(
       err instanceof ExtractionError
         ? err.message
         : err instanceof Error
-        ? err.message
-        : String(err);
+          ? err.message
+          : String(err);
 
-    await updateSceneStatus(unit.storyUnitId, scene.sceneNumber, "failed")
-      .catch(() => {}); // best-effort
+    await updateSceneStatus(
+      unit.storyUnitId,
+      scene.sceneNumber,
+      "failed",
+    ).catch(() => {}); // best-effort
 
     recordExtractionFailure(unit.storyUnitId);
     await flushMetrics().catch(() => {});
@@ -187,7 +190,7 @@ export async function processScene(
     let resolved = await resolveEntityName(
       canonicalName,
       unit.universeId,
-      allUniverseEntities
+      allUniverseEntities,
     );
 
     if (!resolved) {
@@ -197,7 +200,7 @@ export async function processScene(
         const parentResolved = await resolveEntityName(
           parentEntityName,
           unit.universeId,
-          allUniverseEntities
+          allUniverseEntities,
         );
         if (parentResolved) {
           parentEntityId = parentResolved.entityId;
@@ -243,7 +246,7 @@ export async function processScene(
       const resolved = await resolveEntityName(
         claim.entityName,
         unit.universeId,
-        allUniverseEntities
+        allUniverseEntities,
       );
       if (resolved) {
         entityId = resolved.entityId;
@@ -297,7 +300,7 @@ export async function processScene(
       const resolved = await resolveEntityName(
         event.subject,
         unit.universeId,
-        allUniverseEntities
+        allUniverseEntities,
       );
       if (resolved) {
         subjectId = resolved.entityId;
@@ -314,7 +317,7 @@ export async function processScene(
         const resolved = await resolveEntityName(
           event.object,
           unit.universeId,
-          allUniverseEntities
+          allUniverseEntities,
         );
         if (resolved) {
           objectId = resolved.entityId;
@@ -344,8 +347,11 @@ export async function processScene(
   // ── Step 7: Mark complete, emit observability ─────────────────────────────
   const durationMs = Date.now() - start;
 
-  await updateSceneStatus(unit.storyUnitId, scene.sceneNumber, "complete")
-    .catch(() => {});
+  await updateSceneStatus(
+    unit.storyUnitId,
+    scene.sceneNumber,
+    "complete",
+  ).catch(() => {});
 
   recordSceneIngestionDuration(unit.storyUnitId, durationMs);
   await flushMetrics().catch(() => {});
@@ -388,7 +394,7 @@ export async function processScene(
 
 function scanForMentionedEntities(
   rawText: string,
-  entities: UniverseEntity[]
+  entities: UniverseEntity[],
 ): string[] {
   const lowerText = rawText.toLowerCase();
   const found: string[] = [];
@@ -414,7 +420,7 @@ function scanForMentionedEntities(
 async function resolveEntityName(
   name: string,
   universeId: string,
-  localEntities: UniverseEntity[]
+  localEntities: UniverseEntity[],
 ): Promise<UniverseEntity | null> {
   // Steps 1 + 2 (exact + case-insensitive) via DB lookup.
   try {
@@ -464,9 +470,9 @@ export function levenshtein(a: string, b: string): number {
     for (let j = 1; j <= b.length; j++) {
       const cost = a[i - 1] === b[j - 1] ? 0 : 1;
       curr[j] = Math.min(
-        curr[j - 1]! + 1,       // insertion
-        prev[j]! + 1,            // deletion
-        prev[j - 1]! + cost      // substitution
+        curr[j - 1]! + 1, // insertion
+        prev[j]! + 1, // deletion
+        prev[j - 1]! + cost, // substitution
       );
       rowMin = Math.min(rowMin, curr[j]!);
     }
@@ -505,13 +511,13 @@ export function formatContextSummary(
     sourceSceneNumber: number;
     confidence: number;
   }>,
-  allEntities: UniverseEntity[]
+  allEntities: UniverseEntity[],
 ): string {
   if (stateRows.length === 0) return "";
 
   // Build a map entityId → canonicalName for display.
   const idToName = new Map<string, string>(
-    allEntities.map((e) => [e.entityId, e.canonicalName])
+    allEntities.map((e) => [e.entityId, e.canonicalName]),
   );
 
   // Group by entity, separating direct claims from inherited ones.
@@ -546,22 +552,25 @@ export function formatContextSummary(
 
   for (const [entityId, group] of groups) {
     const entityName =
-      (stateRows.find((r) => r.universeEntityId === entityId)?.entityName) ??
+      stateRows.find((r) => r.universeEntityId === entityId)?.entityName ??
       idToName.get(entityId) ??
       entityId;
 
     for (const c of group.directClaims) {
       lines.push(
         `- ${entityName}: ${c.property} = "${c.value}" ` +
-          `(established scene ${c.sourceSceneNumber}, confidence ${c.confidence.toFixed(2)})`
+          `(established scene ${c.sourceSceneNumber}, confidence ${c.confidence.toFixed(2)})`,
       );
     }
 
     for (const c of group.inheritedClaims) {
-      const parentName = (c.parentEntityId ? idToName.get(c.parentEntityId) : undefined) ?? idToName.get(c.universeEntityId) ?? c.universeEntityId;
+      const parentName =
+        (c.parentEntityId ? idToName.get(c.parentEntityId) : undefined) ??
+        idToName.get(c.universeEntityId) ??
+        c.universeEntityId;
       lines.push(
         `  [inherited from ${parentName}]: ${c.property} = "${c.value}" ` +
-          `(established scene ${c.sourceSceneNumber}, confidence ${c.confidence.toFixed(2)})`
+          `(established scene ${c.sourceSceneNumber}, confidence ${c.confidence.toFixed(2)})`,
       );
     }
   }

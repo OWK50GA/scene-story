@@ -18,7 +18,7 @@ const promEnabled =
 if (!promEnabled) {
   console.warn(
     "[metrics] Prometheus env vars missing — metrics disabled. " +
-      "Set GRAFANA_PROMETHEUS_URL, GRAFANA_PROMETHEUS_USERNAME, GRAFANA_PROMETHEUS_TOKEN to enable."
+      "Set GRAFANA_PROMETHEUS_URL, GRAFANA_PROMETHEUS_USERNAME, GRAFANA_PROMETHEUS_TOKEN to enable.",
   );
 }
 
@@ -68,7 +68,7 @@ function _enqueue(sample: MetricSample): void {
 function _record(
   name: string,
   value: number,
-  labels: Record<string, string> = {}
+  labels: Record<string, string> = {},
 ): void {
   _enqueue({ name, labels, value, timestampMs: Date.now() });
 }
@@ -101,7 +101,7 @@ export async function flushMetrics(): Promise<void> {
 
     if (!retried) {
       console.error(
-        `[metrics] Prometheus push failed after retry. Dropped ${batch.length} samples.`
+        `[metrics] Prometheus push failed after retry. Dropped ${batch.length} samples.`,
       );
     }
   }
@@ -145,9 +145,9 @@ async function _pushToPrometheus(batch: MetricSample[]): Promise<boolean> {
     });
 
     const body = lines.join("\n");
-    const credentials = Buffer.from(
-      `${PROM_USERNAME}:${PROM_TOKEN}`
-    ).toString("base64");
+    const credentials = Buffer.from(`${PROM_USERNAME}:${PROM_TOKEN}`).toString(
+      "base64",
+    );
 
     const response = await fetch(`${PROM_URL}/api/prom/push`, {
       method: "POST",
@@ -160,7 +160,7 @@ async function _pushToPrometheus(batch: MetricSample[]): Promise<boolean> {
 
     if (!response.ok) {
       console.error(
-        `[metrics] Prometheus returned ${response.status}: ${await response.text()}`
+        `[metrics] Prometheus returned ${response.status}: ${await response.text()}`,
       );
       return false;
     }
@@ -188,7 +188,7 @@ async function _pushToPrometheus(batch: MetricSample[]): Promise<boolean> {
  */
 export function recordSceneIngestionDuration(
   storyUnitId: string,
-  durationMs: number
+  durationMs: number,
 ): void {
   _record("lmm_scene_ingestion_duration_ms", durationMs, {
     story_unit_id: storyUnitId,
@@ -201,7 +201,7 @@ export function recordSceneIngestionDuration(
  */
 export function recordClaimWritten(
   storyUnitId: string,
-  sourceType: SourceType
+  sourceType: SourceType,
 ): void {
   _record("lmm_claims_written_total", 1, {
     story_unit_id: storyUnitId,
@@ -215,7 +215,7 @@ export function recordClaimWritten(
  */
 export function recordConfidence(
   sourceType: SourceType,
-  confidence: number
+  confidence: number,
 ): void {
   _record("lmm_confidence_distribution", confidence, {
     source_type: sourceType,
@@ -249,7 +249,7 @@ export function recordExtractionFailure(storyUnitId: string): void {
  */
 export function recordGuardianDuration(
   scope: FindingScope,
-  durationMs: number
+  durationMs: number,
 ): void {
   _record("lmm_guardian_duration_ms", durationMs, { scope });
 }
@@ -259,7 +259,7 @@ export function recordGuardianDuration(
  */
 export function recordClaimPairsExamined(
   scope: FindingScope,
-  count: number
+  count: number,
 ): void {
   _record("lmm_claim_pairs_examined_total", count, { scope });
 }
@@ -269,7 +269,7 @@ export function recordClaimPairsExamined(
  */
 export function recordFindingWritten(
   conflictType: Exclude<ConflictType, "normal_transition">,
-  scope: FindingScope
+  scope: FindingScope,
 ): void {
   _record("lmm_findings_written_total", 1, {
     conflict_type: conflictType,
@@ -285,7 +285,7 @@ export function recordFindingWritten(
  * - "indeterminate"— Gemini returned indeterminate, or the call failed
  */
 export function recordTemporalResolution(
-  method: "precise" | "cached" | "fuzzy_gemini" | "indeterminate"
+  method: "precise" | "cached" | "fuzzy_gemini" | "indeterminate",
 ): void {
   _record("lmm_temporal_resolution_total", 1, { method });
 }

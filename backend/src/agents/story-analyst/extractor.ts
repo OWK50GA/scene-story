@@ -7,10 +7,7 @@ import {
   type Scene,
   type StoryUnit,
 } from "../../types/index.js";
-import {
-  buildExtractionPrompt,
-  type ExtractionPromptInput,
-} from "./prompt.js";
+import { buildExtractionPrompt, type ExtractionPromptInput } from "./prompt.js";
 
 // =============================================================================
 // Story Analyst — Scene Extractor
@@ -71,7 +68,7 @@ export async function extractScene(
   scene: Scene,
   unit: StoryUnit,
   contextSummary: string,
-  sceneTotal: number
+  sceneTotal: number,
 ): Promise<SceneExtraction> {
   const promptInput: ExtractionPromptInput = {
     scene,
@@ -96,7 +93,7 @@ export async function extractScene(
       throw new ExtractionError(
         scene.sceneId,
         lastRaw,
-        `Gemini call failed after ${MAX_ATTEMPTS} attempts for scene ${scene.sceneNumber}: ${lastRaw}`
+        `Gemini call failed after ${MAX_ATTEMPTS} attempts for scene ${scene.sceneNumber}: ${lastRaw}`,
       );
     }
 
@@ -119,7 +116,7 @@ export async function extractScene(
       lastRaw,
       `SceneExtraction schema validation failed after ${MAX_ATTEMPTS} attempts ` +
         `for scene ${scene.sceneNumber} (${scene.heading}). ` +
-        `Last error: ${result.error}`
+        `Last error: ${result.error}`,
     );
   }
 
@@ -127,7 +124,7 @@ export async function extractScene(
   throw new ExtractionError(
     scene.sceneId,
     lastRaw,
-    `extractScene: unreachable state for scene ${scene.sceneNumber}`
+    `extractScene: unreachable state for scene ${scene.sceneNumber}`,
   );
 }
 
@@ -146,8 +143,8 @@ async function callGemini(prompt: string): Promise<string> {
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(
       () => reject(new Error(`Gemini request timed out after ${TIMEOUT_MS}ms`)),
-      TIMEOUT_MS
-    )
+      TIMEOUT_MS,
+    ),
   );
 
   const geminiPromise = genai.models.generateContent({
@@ -177,8 +174,7 @@ async function callGemini(prompt: string): Promise<string> {
  * caller can decide whether to retry or throw without try/catch nesting.
  */
 type ParseResult =
-  | { ok: true; data: SceneExtraction }
-  | { ok: false; error: string };
+  { ok: true; data: SceneExtraction } | { ok: false; error: string };
 
 function parseAndValidate(raw: string): ParseResult {
   let parsed: unknown;

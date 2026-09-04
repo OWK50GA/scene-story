@@ -214,7 +214,7 @@ export function parseScreenplayTextOrThrow(text: string): ParseResult {
     throw new ParseError(
       "No scene headings found. " +
         "The file does not appear to be in standard screenplay format " +
-        "(expected lines starting with INT., EXT., INT./EXT., or EXT./INT.)."
+        "(expected lines starting with INT., EXT., INT./EXT., or EXT./INT.).",
     );
   }
   return result;
