@@ -15,6 +15,7 @@ import type {
 import { MCPOperationError } from "../types/index.js";
 import { director } from "../agents/director/agent.js";
 import type { CompanionAnswer, GuardianSummary } from "../agents/director/orchestration.js";
+import { handleError } from "../lib/handle-error.js";
 
 // ---------------------------------------------------------------------------
 // Schema for validating the :id route param (reused across all handlers)
@@ -109,23 +110,8 @@ function serialiseCompanionAnswer(a: CompanionAnswer) {
 }
 
 // ---------------------------------------------------------------------------
-// Error handler
+// Error handler — delegated to shared lib
 // ---------------------------------------------------------------------------
-
-function handleError(err: unknown, res: Response) {
-  if (err instanceof MCPOperationError) {
-    const status = err.code.endsWith("not_found") ? 404 : 400;
-    return res.status(status).json({
-      status: "error",
-      message: err.message,
-      code: err.code,
-    });
-  }
-  return res.status(500).json({
-    status: "error",
-    message: "Internal Server Error",
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Handlers

@@ -8,6 +8,7 @@ import { z } from "zod";
 import { GuardianSummary } from "../agents/director/orchestration.js";
 import { director } from "../agents/director/agent.js";
 import { parseScreenplay, ParseError } from "../parser/index.js";
+import { handleError } from "../lib/handle-error.js";
 
 // ---------------------------------------------------------------------------
 // Per-unit pipeline emitter registry
@@ -86,21 +87,6 @@ function serialiseGuardianSummary(s: GuardianSummary) {
   };
 }
 
-function handleError(err: unknown, res: Response) {
-    if (err instanceof MCPOperationError) {
-        const status = err.code.endsWith("not_found") ? 404 : 400;
-        return res.status(status).json({
-        status: "error",
-        message: err.message,
-        code: err.code,
-        });
-    }
-    return res.status(500).json({
-        status: "error",
-        message: "Internal Server Error",
-    });
-}
-
 export async function createStoryUnitHttp(req: Request, res: Response) {
     const parsed = CreateStoryUnitInput.safeParse(req.body);
 
@@ -155,12 +141,29 @@ export async function ingestFileHttp(req: Request, res: Response) {
 
   const { id: storyUnitId } = parsedParam.data;
 
-  // Verify the story unit exists before doing any parse work.
+  // Guard: reject if an ingest is already active for this unit.
+  if (pipelineEmitters.has(storyUnitId)) {
+    return res.status(409).json({
+      status: "error",
+      message: "Ingestion is already in progress for this story unit.",
+      code: "ingestion.already_running",
+    });
+  }
+
+  // Also reject if the unit has already completed ingestion.
   let unit: StoryUnit;
   try {
     unit = await getStoryUnit(storyUnitId);
   } catch (err) {
     return handleError(err, res);
+  }
+
+  if (unit.ingestionStatus === "ingesting" || unit.ingestionStatus === "complete") {
+    return res.status(409).json({
+      status: "error",
+      message: `Cannot ingest: story unit is already in status "${unit.ingestionStatus}".`,
+      code: "ingestion.invalid_status",
+    });
   }
 
   // Parse the screenplay.
@@ -212,9 +215,16 @@ export async function ingestFileHttp(req: Request, res: Response) {
   const emitter = new EventEmitter();
   pipelineEmitters.set(storyUnitId, emitter);
 
-  // Clean up registry entry when the pipeline finishes (success or failure).
+  // Clean up registry and notify any connected SSE clients if the pipeline
+  // throws unexpectedly. runIngestionPipeline never throws by contract, but
+  // this guards against future changes and prevents unhandled rejections.
   const pipeline = director.ingestStoryUnit(storyUnitId, emitter);
-  pipeline.finally(() => pipelineEmitters.delete(storyUnitId));
+  pipeline
+    .catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err);
+      emitter.emit("ingestion_failed", { message });
+    })
+    .finally(() => pipelineEmitters.delete(storyUnitId));
 
   return res.status(202).json({
     status: "success",
@@ -340,15 +350,23 @@ export async function getIngestionStatusStreamHttp(req: Request, res: Response) 
     res.end();
   }
 
+  function onIngestionFailed(data: unknown) {
+    writeEvent("ingestion_failed", data);
+    cleanup();
+    res.end();
+  }
+
   function cleanup() {
     activeEmitter.off("scene_complete", onSceneComplete);
     activeEmitter.off("scene_failed", onSceneFailed);
     activeEmitter.off("ingestion_complete", onIngestionComplete);
+    activeEmitter.off("ingestion_failed", onIngestionFailed);
   }
 
   emitter.on("scene_complete", onSceneComplete);
   emitter.on("scene_failed", onSceneFailed);
   emitter.on("ingestion_complete", onIngestionComplete);
+  emitter.on("ingestion_failed", onIngestionFailed);
 
   // Clean up listeners if the client disconnects before ingestion finishes.
   req.on("close", cleanup);
