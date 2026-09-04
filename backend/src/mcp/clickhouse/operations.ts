@@ -256,6 +256,10 @@ export async function createUniverse(
   return created;
 }
 
+export async function listUniverses(): Promise<Universe[]> {
+  return select("listUniverses", Q.SELECT_ALL_UNIVERSES, {}, rowToUniverse);
+}
+
 export async function getUniverse(universeId: string): Promise<Universe> {
   const rows = await select("getUniverse", Q.SELECT_UNIVERSE, { universe_id: universeId }, rowToUniverse);
   if (rows.length === 0) {
@@ -303,7 +307,7 @@ export async function getProject(projectId: string): Promise<Project> {
 // Story unit operations
 // =============================================================================
 
-const CreateStoryUnitInput = z.object({
+export const CreateStoryUnitInput = z.object({
   projectId: z.uuid(),
   universeId: z.uuid(),
   title: z.string().min(1),

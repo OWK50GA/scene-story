@@ -380,9 +380,9 @@ export type CreateUniverseRequest = {
 };
 
 export type CreateUniverseResponse = {
-  universeId: string;
+  universe_id: string;
   name: string;
-  createdAt: Date;
+  created_at: Date;
 };
 
 // --- Projects ---

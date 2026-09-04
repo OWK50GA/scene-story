@@ -1,0 +1,378 @@
+import { Request, Response } from "express";
+import EventEmitter from "events";
+import multer, { type FileFilterCallback } from "multer";
+import type { Request as ExpressRequest } from "express";
+import { createStoryUnit, CreateStoryUnitInput, getStoryUnit, getFailedSceneNumbers, insertScene } from "../mcp/clickhouse/operations.js";
+import { ContinuityFinding, MCPOperationError, StoryUnit } from "../types/index.js";
+import { z } from "zod";
+import { GuardianSummary } from "../agents/director/orchestration.js";
+import { director } from "../agents/director/agent.js";
+import { parseScreenplay, ParseError } from "../parser/index.js";
+
+// ---------------------------------------------------------------------------
+// Per-unit pipeline emitter registry
+//
+// ingestFileHttp creates an EventEmitter, registers it here, and passes it
+// to director.ingestStoryUnit(). The SSE handler looks it up by unit ID.
+// The emitter is removed once ingestion_complete fires or the pipeline errors.
+// ---------------------------------------------------------------------------
+
+const pipelineEmitters = new Map<string, EventEmitter>();
+
+// ---------------------------------------------------------------------------
+// Multer — memory storage, 10 MB limit, screenplay file types only
+// ---------------------------------------------------------------------------
+
+export const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter(_req: ExpressRequest, file: Express.Multer.File, cb: FileFilterCallback) {
+    const allowed = ["text/plain", "application/pdf"];
+    const allowedExt = ["txt", "pdf", "fountain"];
+    const ext = file.originalname.toLowerCase().split(".").pop() ?? "";
+    if (allowed.includes(file.mimetype) || allowedExt.includes(ext)) {
+      cb(null, true);
+    } else {
+      cb(new Error(`Unsupported file type: ${file.mimetype}. Accepted: PDF, plain text, Fountain.`));
+    }
+  },
+});
+
+const StoryUnitParamSchema = z.object({
+    id: z.uuid(),
+})
+
+function serialiseStoryUnit(s: StoryUnit) {
+    return {
+        story_unit_id: s.storyUnitId,
+        project_id: s.projectId,
+        universe_id: s.universeId,
+        title: s.title,
+        unit_type: s.unitType,
+        season_number: s.seasonNumber,
+        episode_number: s.episodeNumber,
+        in_universe_period: s.inUniversePeriod,
+        in_universe_date_start: s.inUniverseDateStart,
+        in_universe_date_end: s.inUniverseDateEnd,
+        release_order: s.releaseOrder,
+        ingestion_status: s.ingestionStatus,
+        scene_count: s.sceneCount,
+        claim_count: s.claimCount,
+    }
+}
+
+function serialiseFinding(f: ContinuityFinding) {
+  return {
+    finding_id: f.findingId,
+    universe_id: f.universeId,
+    project_id: f.projectId,
+    story_unit_id_a: f.storyUnitIdA,
+    story_unit_id_b: f.storyUnitIdB,
+    claim_a_id: f.claimAId,
+    claim_b_id: f.claimBId,
+    conflict_type: f.conflictType,
+    severity: f.severity,
+    scope: f.scope,
+    explanation: f.explanation,
+    resolution_suggestion: f.resolutionSuggestion,
+    status: f.status,
+  };
+}
+
+function serialiseGuardianSummary(s: GuardianSummary) {
+  return {
+    findings_count: s.findingsCount,
+    findings: s.findings.map(serialiseFinding),
+  };
+}
+
+function handleError(err: unknown, res: Response) {
+    if (err instanceof MCPOperationError) {
+        const status = err.code.endsWith("not_found") ? 404 : 400;
+        return res.status(status).json({
+        status: "error",
+        message: err.message,
+        code: err.code,
+        });
+    }
+    return res.status(500).json({
+        status: "error",
+        message: "Internal Server Error",
+    });
+}
+
+export async function createStoryUnitHttp(req: Request, res: Response) {
+    const parsed = CreateStoryUnitInput.safeParse(req.body);
+
+    if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        return res.status(400).json({
+            status: "error",
+            message: `${String(issue.path[0])}: ${issue.message}`,
+        });
+    }
+
+    const data = parsed.data;
+
+    if (!data.inUniverseDateStart && !data.inUniverseDateEnd) {
+        if (data.inUniversePeriod.length < 1) {
+            return res.status(400).json({
+                status: "error",
+                message: "Provide precise dates for universe start and end, or a string period",
+            });
+        }
+    }
+    
+    try {
+        const storyUnit = await createStoryUnit(data);
+
+        return res.status(201).json({
+            status: "success",
+            story_unit: serialiseStoryUnit(storyUnit)
+        });
+    } catch (err) {
+        return handleError(err, res);
+    }
+}
+
+export async function ingestFileHttp(req: Request, res: Response) {
+  const parsedParam = StoryUnitParamSchema.safeParse(req.params);
+  if (!parsedParam.success) {
+    const issue = parsedParam.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue?.path[0])}: ${issue?.message}`,
+    });
+  }
+
+  const file = req.file;
+  if (!file) {
+    return res.status(400).json({
+      status: "error",
+      message: "No file uploaded. Send the screenplay as multipart/form-data field 'file'.",
+    });
+  }
+
+  const { id: storyUnitId } = parsedParam.data;
+
+  // Verify the story unit exists before doing any parse work.
+  let unit: StoryUnit;
+  try {
+    unit = await getStoryUnit(storyUnitId);
+  } catch (err) {
+    return handleError(err, res);
+  }
+
+  // Parse the screenplay.
+  let parsed;
+  try {
+    parsed = await parseScreenplay(file.buffer, {
+      mimeType: file.mimetype,
+      filename: file.originalname,
+    });
+  } catch (err) {
+    if (err instanceof ParseError) {
+      return res.status(422).json({
+        status: "error",
+        message: err.message,
+        code: "parse.no_scenes_found",
+      });
+    }
+    return handleError(err, res);
+  }
+
+  if (parsed.scenes.length === 0) {
+    return res.status(422).json({
+      status: "error",
+      message: "The uploaded file parsed successfully but contains no scene headings.",
+      code: "parse.no_scenes_found",
+    });
+  }
+
+  // Insert all scenes into ClickHouse.
+  // Do this before starting the pipeline so every scene row exists before
+  // the Director begins processing (required by the sequential context model).
+  try {
+    for (const scene of parsed.scenes) {
+      await insertScene({
+        storyUnitId,
+        projectId: unit.projectId,
+        universeId: unit.universeId,
+        sceneNumber: scene.sceneNumber,
+        heading: scene.heading,
+        rawText: scene.rawText,
+      });
+    }
+  } catch (err) {
+    return handleError(err, res);
+  }
+
+  // Kick off ingestion — fire and forget. The client polls /status or
+  // connects to /ingest-stream for progress.
+  const emitter = new EventEmitter();
+  pipelineEmitters.set(storyUnitId, emitter);
+
+  // Clean up registry entry when the pipeline finishes (success or failure).
+  const pipeline = director.ingestStoryUnit(storyUnitId, emitter);
+  pipeline.finally(() => pipelineEmitters.delete(storyUnitId));
+
+  return res.status(202).json({
+    status: "success",
+    data: {
+      story_unit_id: storyUnitId,
+      scene_count: parsed.scenes.length,
+      ingestion_status: "ingesting",
+    },
+  });
+}
+
+export async function getIngestionStatusHttp(req: Request, res: Response) {
+  const parsed = StoryUnitParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue?.path[0])}: ${issue?.message}`,
+    });
+  }
+
+  try {
+    const unit = await getStoryUnit(parsed.data.id);
+    const failedScenes = await getFailedSceneNumbers(parsed.data.id);
+
+    return res.status(200).json({
+      status: "success",
+      data: {
+        story_unit_id: unit.storyUnitId,
+        ingestion_status: unit.ingestionStatus,
+        scene_count: unit.sceneCount,
+        claim_count: unit.claimCount,
+        failed_scenes: failedScenes,
+      },
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
+}
+
+export async function getIngestionStatusStreamHttp(req: Request, res: Response) {
+  const parsed = StoryUnitParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue?.path[0])}: ${issue?.message}`,
+    });
+  }
+
+  const { id: storyUnitId } = parsed.data;
+
+  // Helper: write a single SSE event to the response stream.
+  function writeEvent(event: string, data: unknown) {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  }
+
+  // Check whether the unit is already in a terminal state.
+  // If so, synthesise a final event and close — no need to attach to the emitter.
+  let unit: StoryUnit;
+  try {
+    unit = await getStoryUnit(storyUnitId);
+  } catch (err) {
+    if (err instanceof MCPOperationError && err.code.endsWith("not_found")) {
+      return res.status(404).json({ status: "error", message: err.message, code: err.code });
+    }
+    return res.status(500).json({ status: "error", message: "Internal Server Error" });
+  }
+
+  if (unit.ingestionStatus === "complete" || unit.ingestionStatus === "failed") {
+    const failedScenes = await getFailedSceneNumbers(storyUnitId).catch(() => [] as number[]);
+    // Set SSE headers then immediately send the terminal event and close.
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.flushHeaders();
+    writeEvent("ingestion_complete", {
+      scene_count: unit.sceneCount,
+      claim_count: unit.claimCount,
+      failed_scenes: failedScenes,
+      ingestion_status: unit.ingestionStatus,
+    });
+    return res.end();
+  }
+
+  // Check whether an active pipeline emitter exists for this unit.
+  const emitter = pipelineEmitters.get(storyUnitId);
+  if (!emitter) {
+    // Unit exists but ingestion hasn't started yet (status: "pending").
+    return res.status(409).json({
+      status: "error",
+      message: "Ingestion has not been started for this story unit. POST to /ingest first.",
+      code: "ingestion.not_started",
+    });
+  }
+
+  // Capture as a narrowed const so nested functions can reference it safely.
+  const activeEmitter: EventEmitter = emitter;
+
+  // ── Open the SSE stream ───────────────────────────────────────────────────
+
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+
+  // Send an initial comment so the client knows the connection is live.
+  res.write(": connected\n\n");
+
+  // ── Wire emitter events to the response stream ────────────────────────────
+
+  function onSceneComplete(data: unknown) {
+    writeEvent("scene_complete", data);
+  }
+
+  function onSceneFailed(data: unknown) {
+    writeEvent("scene_failed", data);
+  }
+
+  function onIngestionComplete(data: unknown) {
+    writeEvent("ingestion_complete", data);
+    cleanup();
+    res.end();
+  }
+
+  function cleanup() {
+    activeEmitter.off("scene_complete", onSceneComplete);
+    activeEmitter.off("scene_failed", onSceneFailed);
+    activeEmitter.off("ingestion_complete", onIngestionComplete);
+  }
+
+  emitter.on("scene_complete", onSceneComplete);
+  emitter.on("scene_failed", onSceneFailed);
+  emitter.on("ingestion_complete", onIngestionComplete);
+
+  // Clean up listeners if the client disconnects before ingestion finishes.
+  req.on("close", cleanup);
+}
+
+export async function analyzeStoryUnitHttp(req: Request, res: Response) {
+    const parsed = StoryUnitParamSchema.safeParse(req.params);
+
+    if (!parsed.success) {
+        const issue = parsed.error.issues[0];
+        return res.status(400).json({
+            status: "error",
+            message: `${String(issue.path[0])}: ${issue.message}`,
+        });
+    }
+
+    try {
+        const analysis = await director.analyzeUnit(parsed.data.id);
+
+        return res.status(200).json({
+            status: "success",
+            data: serialiseGuardianSummary(analysis),
+        });
+    } catch (err) {
+        return handleError(err, res);
+    }
+}

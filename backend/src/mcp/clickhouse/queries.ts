@@ -180,6 +180,10 @@ export const Q = {
     VALUES ({universe_id: String}, {name: String}, {description: String}, now())
   `,
 
+  SELECT_ALL_UNIVERSES: `
+    SELECT * FROM lmm.universes ORDER BY created_at DESC
+  `,
+
   SELECT_UNIVERSE: `
     SELECT * FROM lmm.universes
     WHERE universe_id = {universe_id: String}

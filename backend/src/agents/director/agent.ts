@@ -311,22 +311,21 @@ class Director {
   /**
    * ingestStoryUnit
    *
-   * Runs the ingestion pipeline for a story unit and returns an EventEmitter
-   * for SSE progress plus the pipeline Promise for awaiting completion.
+   * Runs the ingestion pipeline for a story unit.
+   * Accepts an external EventEmitter so the route handler owns the emitter
+   * lifecycle and can register it in the SSE registry before the pipeline starts.
    *
    * Route handler pattern:
-   *   const { emitter, pipeline } = director.ingestStoryUnit(id);
-   *   emitter.on("scene_complete", (d) => res.write(...));
-   *   emitter.on("ingestion_complete", (d) => { res.write(...); res.end(); });
-   *   // pipeline resolves with the full IngestionSummary when done
+   *   const emitter = new EventEmitter();
+   *   pipelineEmitters.set(storyUnitId, emitter);
+   *   const pipeline = director.ingestStoryUnit(storyUnitId, emitter);
+   *   // client connecting to /ingest-stream picks up the emitter from the map
    */
-  ingestStoryUnit(storyUnitId: string): {
-    emitter: EventEmitter;
-    pipeline: Promise<IngestionSummary>;
-  } {
-    const emitter = new EventEmitter();
-
-    const pipeline = runIngestionPipeline(storyUnitId, emitter, (sceneNumber) => {
+  ingestStoryUnit(
+    storyUnitId: string,
+    emitter: EventEmitter
+  ): Promise<IngestionSummary> {
+    return runIngestionPipeline(storyUnitId, emitter, (sceneNumber) => {
       log({
         agent: "director",
         universeId: "unknown",
@@ -336,8 +335,6 @@ class Director {
         status: "retry",
       });
     });
-
-    return { emitter, pipeline };
   }
 
   /**
