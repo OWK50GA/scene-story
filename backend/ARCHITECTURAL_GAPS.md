@@ -40,16 +40,19 @@ Storage target: **Google Cloud Storage** — already implied by the GCP platform
 choice for this project. One bucket per environment.
 
 Object key convention:
+
 ```
 {universeId}/{storyUnitId}/original.{ext}
 ```
 
 Story unit schema addition:
+
 ```sql
 ALTER TABLE story_units ADD COLUMN source_file_url String DEFAULT '';
 ```
 
 Route change (inside `POST /ingest`):
+
 ```typescript
 // 1. Upload to GCS before parsing
 const fileUrl = await uploadToGCS(req.file.buffer, {
@@ -66,6 +69,7 @@ const result = await parseScreenplay(req.file.buffer, { ... });
 ```
 
 New config vars required:
+
 ```
 GCS_BUCKET=
 GCS_PROJECT_ID=
@@ -108,6 +112,7 @@ No code change needed. Requires a Gemini Enterprise Agent Platform API key
 tier rate limits.
 
 Once the key is in `.env` as `GEMINI_API_KEY`, run:
+
 ```
 pnpm tsx scripts/iterate-prompt.ts
 ```
@@ -155,10 +160,10 @@ Once the client exists, replace the ClickHouse scene reads in
 
 ```typescript
 const claimCounts = await grafana.queryRange(
-  `sum by (scene_number) (lmm_claims_written_total{story_unit_id="${storyUnitId}"})`
+  `sum by (scene_number) (lmm_claims_written_total{story_unit_id="${storyUnitId}"})`,
 );
 const durations = await grafana.queryRange(
-  `lmm_scene_ingestion_duration_ms{story_unit_id="${storyUnitId}"}`
+  `lmm_scene_ingestion_duration_ms{story_unit_id="${storyUnitId}"}`,
 );
 ```
 

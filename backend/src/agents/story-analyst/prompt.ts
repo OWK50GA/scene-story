@@ -864,7 +864,7 @@ export function buildExtractionPrompt(input: ExtractionPromptInput): string {
 function buildPart1Runtime(
   unit: StoryUnit,
   scene: Scene,
-  sceneTotal: number
+  sceneTotal: number,
 ): string {
   const dateLabel =
     unit.inUniverseDateStart != null

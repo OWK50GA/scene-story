@@ -74,7 +74,7 @@ describe("levenshtein", () => {
 function makeEntity(
   entityId: string,
   canonicalName: string,
-  parentEntityId: string | null = null
+  parentEntityId: string | null = null,
 ): UniverseEntity {
   return {
     entityId,
@@ -122,7 +122,7 @@ describe("formatContextSummary", () => {
       {
         entityName: undefined,
         universeEntityId: "e1",
-        parentEntityId: "e2",   // non-null → inherited
+        parentEntityId: "e2", // non-null → inherited
         property: "condition",
         value: "operational",
         sourceSceneNumber: 2,

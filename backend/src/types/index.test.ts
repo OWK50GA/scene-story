@@ -27,7 +27,9 @@ describe("CONFIDENCE_RANGES", () => {
 
   it("there is a forbidden gap between inferred max and implied min", () => {
     // No valid confidence exists between 0.60 and 0.75
-    expect(CONFIDENCE_RANGES.inferred.max).toBeLessThan(CONFIDENCE_RANGES.implied.min);
+    expect(CONFIDENCE_RANGES.inferred.max).toBeLessThan(
+      CONFIDENCE_RANGES.implied.min,
+    );
   });
 });
 
@@ -52,7 +54,8 @@ const validExtraction = {
       value: "Archive Room",
       sourceType: "explicit",
       confidence: 0.95,
-      confidenceRationale: "The stage direction places her in the Archive Room.",
+      confidenceRationale:
+        "The stage direction places her in the Archive Room.",
       sourceLine: "Clara opens the safe.",
     },
   ],
@@ -86,7 +89,13 @@ describe("SceneExtractionSchema", () => {
   it("accepts explicit confidence of 0.91 (within 0.90–1.00)", () => {
     const input = {
       ...validExtraction,
-      claims: [{ ...validExtraction.claims[0]!, sourceType: "explicit", confidence: 0.91 }],
+      claims: [
+        {
+          ...validExtraction.claims[0]!,
+          sourceType: "explicit",
+          confidence: 0.91,
+        },
+      ],
     };
     expect(SceneExtractionSchema.safeParse(input).success).toBe(true);
   });
@@ -94,7 +103,13 @@ describe("SceneExtractionSchema", () => {
   it("accepts implied confidence of 0.80 (within 0.75–0.89)", () => {
     const input = {
       ...validExtraction,
-      claims: [{ ...validExtraction.claims[0]!, sourceType: "implied", confidence: 0.80 }],
+      claims: [
+        {
+          ...validExtraction.claims[0]!,
+          sourceType: "implied",
+          confidence: 0.8,
+        },
+      ],
     };
     expect(SceneExtractionSchema.safeParse(input).success).toBe(true);
   });
@@ -102,7 +117,13 @@ describe("SceneExtractionSchema", () => {
   it("accepts inferred confidence of 0.50 (within 0.0–0.60)", () => {
     const input = {
       ...validExtraction,
-      claims: [{ ...validExtraction.claims[0]!, sourceType: "inferred", confidence: 0.50 }],
+      claims: [
+        {
+          ...validExtraction.claims[0]!,
+          sourceType: "inferred",
+          confidence: 0.5,
+        },
+      ],
     };
     expect(SceneExtractionSchema.safeParse(input).success).toBe(true);
   });
@@ -118,7 +139,9 @@ describe("SceneExtractionSchema", () => {
   it("accepts a string parentEntityName on an entity", () => {
     const input = {
       ...validExtraction,
-      entities: [{ ...validExtraction.entities[0]!, parentEntityName: "Operative" }],
+      entities: [
+        { ...validExtraction.entities[0]!, parentEntityName: "Operative" },
+      ],
     };
     expect(SceneExtractionSchema.safeParse(input).success).toBe(true);
   });
@@ -179,10 +202,12 @@ describe("SceneExtractionSchema", () => {
       ["implied", 0.9],
       ["inferred", 0.61],
     ] as const) {
-      expect(SceneExtractionSchema.safeParse({
-        ...validExtraction,
-        claims: [{ ...validExtraction.claims[0]!, sourceType, confidence }],
-      }).success).toBe(false);
+      expect(
+        SceneExtractionSchema.safeParse({
+          ...validExtraction,
+          claims: [{ ...validExtraction.claims[0]!, sourceType, confidence }],
+        }).success,
+      ).toBe(false);
     }
   });
 

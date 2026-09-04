@@ -23,14 +23,14 @@ const database = config.CLICKHOUSE_DATABASE;
 if (!url) {
   throw new Error(
     "CLICKHOUSE_URL is not set. " +
-      "Add it to your .env file before starting the server."
+      "Add it to your .env file before starting the server.",
   );
 }
 
 if (!password) {
   throw new Error(
     "CLICKHOUSE_PASSWORD is not set. " +
-      "Add it to your .env file before starting the server."
+      "Add it to your .env file before starting the server.",
   );
 }
 

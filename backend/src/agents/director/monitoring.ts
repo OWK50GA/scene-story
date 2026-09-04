@@ -87,11 +87,11 @@ const ANOMALY_DURATION_MULTIPLIER = 5;
  * @returns            IngestionHealthReport — healthy:true means no anomalies.
  */
 export async function checkIngestionHealth(
-  storyUnitId: string
+  storyUnitId: string,
 ): Promise<IngestionHealthReport> {
   const scenes = await getScenesForUnit(storyUnitId).catch(() => []);
   const failedSceneNumbers = await getFailedSceneNumbers(storyUnitId).catch(
-    () => [] as number[]
+    () => [] as number[],
   );
 
   const anomalies: SceneHealthEntry[] = [];
@@ -162,7 +162,7 @@ export async function checkIngestionHealth(
  */
 export async function retryScene(
   storyUnitId: string,
-  sceneNumber: number
+  sceneNumber: number,
 ): Promise<RetryResult> {
   // Load fresh data — the scene may have been partially written on the first attempt.
   let unit;
@@ -231,7 +231,7 @@ export async function retryScene(
     scene,
     unit,
     project,
-    sceneTotal
+    sceneTotal,
   );
 
   await flushMetrics().catch(() => {});
@@ -253,7 +253,10 @@ export async function retryScene(
   });
 
   // If still anomalous after the explicit retry, escalate.
-  if (result.status === "failed" || result.claimsWritten < MIN_CLAIMS_PER_SCENE) {
+  if (
+    result.status === "failed" ||
+    result.claimsWritten < MIN_CLAIMS_PER_SCENE
+  ) {
     await flagForReview(unit.universeId, {
       reason: "retry_scene_still_anomalous",
       storyUnitId,

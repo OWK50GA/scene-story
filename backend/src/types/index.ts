@@ -9,11 +9,7 @@ export type ProjectType = "film" | "series" | "crossover" | "other";
 export type StoryUnitType = "film" | "episode" | "short" | "other";
 
 export type EntityType =
-  | "character"
-  | "object"
-  | "location"
-  | "faction"
-  | "concept";
+  "character" | "object" | "location" | "faction" | "concept";
 
 export type SourceType = "explicit" | "implied" | "inferred";
 
@@ -34,10 +30,7 @@ export type SceneIngestionStatus = "pending" | "complete" | "failed";
  * or by Gemini semantic reasoning over fuzzy period labels.
  */
 export type TemporalRelationType =
-  | "before"
-  | "after"
-  | "overlapping"
-  | "indeterminate";
+  "before" | "after" | "overlapping" | "indeterminate";
 
 // =============================================================================
 // Confidence range constants — enforced by write_claim MCP operation
@@ -250,7 +243,7 @@ export const SceneExtractionSchema = z.object({
        * parentEntityId if a match is found.
        */
       parentEntityName: z.string().nullable(),
-    })
+    }),
   ),
   claims: z.array(
     z.discriminatedUnion("sourceType", [
@@ -281,7 +274,7 @@ export const SceneExtractionSchema = z.object({
         confidenceRationale: z.string(),
         sourceLine: z.string(),
       }),
-    ])
+    ]),
   ),
   events: z.array(
     z.object({
@@ -289,7 +282,7 @@ export const SceneExtractionSchema = z.object({
       action: z.string().min(1),
       object: z.string().nullable(),
       description: z.string(),
-    })
+    }),
   ),
 });
 
@@ -322,11 +315,7 @@ export type TemporalResolution = z.infer<typeof TemporalResolutionSchema>;
 // Observability
 // =============================================================================
 
-export type AgentName =
-  | "director"
-  | "story-analyst"
-  | "guardian"
-  | "companion";
+export type AgentName = "director" | "story-analyst" | "guardian" | "companion";
 
 export type LogEvent = {
   agent: AgentName;
@@ -350,7 +339,7 @@ export class MCPOperationError extends Error {
     public readonly operation: string,
     public readonly code: string,
     message: string,
-    public readonly detail?: unknown
+    public readonly detail?: unknown,
   ) {
     super(message);
     this.name = "MCPOperationError";
@@ -361,7 +350,7 @@ export class ExtractionError extends Error {
   constructor(
     public readonly sceneId: string,
     public readonly rawResponse: string,
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = "ExtractionError";
@@ -380,9 +369,9 @@ export type CreateUniverseRequest = {
 };
 
 export type CreateUniverseResponse = {
-  universeId: string;
+  universe_id: string;
   name: string;
-  createdAt: Date;
+  created_at: Date;
 };
 
 // --- Projects ---

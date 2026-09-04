@@ -6,11 +6,11 @@ import type { LogEvent } from "../types/index";
 // degrades to console-only mode rather than crashing the server at startup.
 // ---------------------------------------------------------------------------
 
-const { 
-  GRAFANA_LOKI_URL: LOKI_URL, 
-  GRAFANA_LOKI_USERNAME: LOKI_USERNAME, 
+const {
+  GRAFANA_LOKI_URL: LOKI_URL,
+  GRAFANA_LOKI_USERNAME: LOKI_USERNAME,
   GRAFANA_LOKI_TOKEN: LOKI_TOKEN,
-  NODE_ENV: ENV
+  NODE_ENV: ENV,
 } = config;
 
 const lokiEnabled =
@@ -19,7 +19,7 @@ const lokiEnabled =
 if (!lokiEnabled) {
   console.warn(
     "[logger] Loki env vars missing — logging to console only. " +
-      "Set GRAFANA_LOKI_URL, GRAFANA_LOKI_USERNAME, GRAFANA_LOKI_TOKEN to enable."
+      "Set GRAFANA_LOKI_URL, GRAFANA_LOKI_USERNAME, GRAFANA_LOKI_TOKEN to enable.",
   );
 }
 
@@ -151,7 +151,7 @@ async function _flush(): Promise<void> {
     if (!retried) {
       // Drop the batch after one retry — we cannot let the queue grow unboundedly.
       console.error(
-        `[logger] Loki push failed after retry. Dropped ${batch.length} log events.`
+        `[logger] Loki push failed after retry. Dropped ${batch.length} log events.`,
       );
     }
   }
@@ -164,9 +164,9 @@ async function _flush(): Promise<void> {
 
 async function _pushToLoki(payload: string): Promise<boolean> {
   try {
-    const credentials = Buffer.from(
-      `${LOKI_USERNAME}:${LOKI_TOKEN}`
-    ).toString("base64");
+    const credentials = Buffer.from(`${LOKI_USERNAME}:${LOKI_TOKEN}`).toString(
+      "base64",
+    );
 
     const response = await fetch(`${LOKI_URL}/loki/api/v1/push`, {
       method: "POST",
@@ -179,7 +179,7 @@ async function _pushToLoki(payload: string): Promise<boolean> {
 
     if (!response.ok) {
       console.error(
-        `[logger] Loki returned ${response.status}: ${await response.text()}`
+        `[logger] Loki returned ${response.status}: ${await response.text()}`,
       );
       return false;
     }

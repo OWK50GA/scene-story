@@ -14,7 +14,10 @@ import {
   recordClaimWritten,
   flushMetrics,
 } from "../../observability/metrics.js";
-import type { ContinuityFinding, SpoilerBoundaryEntry } from "../../types/index.js";
+import type {
+  ContinuityFinding,
+  SpoilerBoundaryEntry,
+} from "../../types/index.js";
 
 // =============================================================================
 // Director — Orchestration
@@ -109,7 +112,7 @@ const ANOMALY_DURATION_MULTIPLIER = 5;
 export async function runIngestionPipeline(
   storyUnitId: string,
   emitter: EventEmitter,
-  onRetry?: (sceneNumber: number) => void
+  onRetry?: (sceneNumber: number) => void,
 ): Promise<IngestionSummary> {
   const pipelineStart = Date.now();
 
@@ -260,9 +263,14 @@ export async function runIngestionPipeline(
   }
 
   // ── Update unit status and counts ─────────────────────────────────────────
-  const finalStatus = failedScenes.length === sceneTotal ? "failed" : "complete";
+  const finalStatus =
+    failedScenes.length === sceneTotal ? "failed" : "complete";
   await updateStoryUnitStatus(storyUnitId, finalStatus).catch(() => {});
-  await updateStoryUnitCounts(storyUnitId, sceneTotal, totalClaimsWritten).catch(() => {});
+  await updateStoryUnitCounts(
+    storyUnitId,
+    sceneTotal,
+    totalClaimsWritten,
+  ).catch(() => {});
 
   // ── Automatic Guardian passes ─────────────────────────────────────────────
   // Within-unit always runs, even if some scenes failed — partial analysis is
@@ -272,7 +280,7 @@ export async function runIngestionPipeline(
 
   // ── Emit completion and flush ─────────────────────────────────────────────
   const failedSceneNumbers = await getFailedSceneNumbers(storyUnitId).catch(
-    () => failedScenes
+    () => failedScenes,
   );
 
   emitter.emit("ingestion_complete", {
@@ -321,7 +329,7 @@ export async function runIngestionPipeline(
  * Returns an empty findings list until then.
  */
 export async function runWithinUnitGuardian(
-  storyUnitId: string
+  storyUnitId: string,
 ): Promise<GuardianSummary> {
   // TODO: Task 10 — replace with Guardian sub-agent call:
   //   const result = await guardianAgent.analyzeUnit(storyUnitId);
@@ -346,7 +354,7 @@ export async function runWithinUnitGuardian(
  * Returns an empty findings list until then.
  */
 export async function runCrossUnitGuardian(
-  universeId: string
+  universeId: string,
 ): Promise<GuardianSummary> {
   // TODO: Task 11 — replace with Guardian sub-agent call:
   //   const result = await guardianAgent.analyzeUniverse(universeId);
@@ -371,7 +379,7 @@ export async function runCrossUnitGuardian(
 export async function runCompanionQuery(
   universeId: string,
   question: string,
-  boundary: SpoilerBoundaryEntry[]
+  boundary: SpoilerBoundaryEntry[],
 ): Promise<CompanionAnswer> {
   // TODO: Task 12 — replace with Companion sub-agent call:
   //   const result = await companionAgent.ask(universeId, question, boundary);
@@ -412,7 +420,7 @@ export async function runCompanionQuery(
  */
 function detectAnomaly(
   result: Awaited<ReturnType<typeof processScene>>,
-  priorDurations: number[]
+  priorDurations: number[],
 ): boolean {
   if (result.status === "failed") return true;
   if (result.claimsWritten < MIN_CLAIMS_PER_SCENE) return true;
@@ -442,7 +450,7 @@ function computeMedian(values: number[]): number {
  */
 export async function flagForReview(
   universeId: string,
-  context: Record<string, unknown>
+  context: Record<string, unknown>,
 ): Promise<void> {
   log({
     agent: "director",

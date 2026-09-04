@@ -27,7 +27,8 @@ describe("parseScreenplayText", () => {
   });
 
   it("returns zero scenes and full text as preamble when no headings are present", () => {
-    const input = "FADE IN:\n\nSome narrative text without a heading.\n\nMore text.";
+    const input =
+      "FADE IN:\n\nSome narrative text without a heading.\n\nMore text.";
     const result = parseScreenplayText(input);
     expect(result.scenes).toHaveLength(0);
     // FADE IN: is a transition — it gets stripped from the preamble only
@@ -54,7 +55,8 @@ describe("parseScreenplayText", () => {
   });
 
   it("recognises INT./EXT. heading", () => {
-    const input = "INT./EXT. MOVING CAR - DAY\n\nThe car moves through traffic.";
+    const input =
+      "INT./EXT. MOVING CAR - DAY\n\nThe car moves through traffic.";
     const result = parseScreenplayText(input);
     expect(result.scenes).toHaveLength(1);
     expect(result.scenes[0]!.heading).toBe("INT./EXT. MOVING CAR - DAY");
@@ -144,7 +146,8 @@ describe("parseScreenplayText", () => {
   // ---------------------------------------------------------------------------
 
   it("strips CUT TO: from scene body", () => {
-    const input = "INT. OFFICE - DAY\n\nJohn sits.\n\nCUT TO:\n\nEXT. STREET - NIGHT\n\nRain.";
+    const input =
+      "INT. OFFICE - DAY\n\nJohn sits.\n\nCUT TO:\n\nEXT. STREET - NIGHT\n\nRain.";
     const result = parseScreenplayText(input);
     expect(result.scenes[0]!.rawText).not.toContain("CUT TO:");
     expect(result.scenes[1]!.rawText).not.toContain("CUT TO:");
@@ -187,7 +190,8 @@ describe("parseScreenplayText", () => {
   });
 
   it("strips FADE IN: from scene body", () => {
-    const input = "INT. APARTMENT - MORNING\n\nFADE IN:\n\nSunlight streams in.";
+    const input =
+      "INT. APARTMENT - MORNING\n\nFADE IN:\n\nSunlight streams in.";
     const result = parseScreenplayText(input);
     expect(result.scenes[0]!.rawText).not.toContain("FADE IN:");
     expect(result.scenes[0]!.rawText).toContain("Sunlight streams in.");
@@ -262,7 +266,9 @@ describe("parseScreenplayText", () => {
 
 describe("parseScreenplayTextOrThrow", () => {
   it("throws ParseError when input has no headings", () => {
-    expect(() => parseScreenplayTextOrThrow("No headings here.")).toThrow(ParseError);
+    expect(() => parseScreenplayTextOrThrow("No headings here.")).toThrow(
+      ParseError,
+    );
   });
 
   it("throws ParseError for empty input", () => {

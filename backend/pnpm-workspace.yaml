@@ -1,5 +1,5 @@
 allowBuilds:
-  '@google/genai': true
-  '@scarf/scarf': true
+  "@google/genai": true
+  "@scarf/scarf": true
   esbuild: true
   protobufjs: true
