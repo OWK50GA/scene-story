@@ -28,7 +28,6 @@
 import {
   findCrossUnitConflicts,
   writeFinding,
-  updateClaimValidTo,
   markClaimSupersededByCanon,
   getStoryUnit,
 } from "../../mcp/clickhouse/operations.js";
@@ -135,9 +134,11 @@ export async function runCrossUnitPass(
         // Cannot reason about ordering — write ambiguous directly,
         // no Gemini reasoning step.
 
-        // Load unit titles for a meaningful explanation.
+        // Load unit titles and projectId for the finding.
+        // unitA and unitB are hoisted so projectId doesn't need a second fetch.
         let unitATitle = candidate.unitAId;
         let unitBTitle = candidate.unitBId;
+        let unitAProjectId = ""; // fallback; writeFinding requires a projectId
         try {
           const [unitA, unitB] = await Promise.all([
             getStoryUnit(candidate.unitAId),
@@ -145,13 +146,14 @@ export async function runCrossUnitPass(
           ]);
           unitATitle = unitA.title;
           unitBTitle = unitB.title;
+          unitAProjectId = unitA.projectId;
         } catch {
           // Non-fatal — fall back to IDs in the explanation.
         }
 
         const finding = await writeFinding({
           universeId,
-          projectId: (await getStoryUnit(candidate.unitAId)).projectId,
+          projectId: unitAProjectId,
           storyUnitIdA: candidate.unitAId,
           storyUnitIdB: candidate.unitBId,
           claimAId: candidate.claimAId,
@@ -201,9 +203,9 @@ export async function runCrossUnitPass(
       const { claimA, claimB } = dossier.candidateTransition;
 
       if (verdict.conflictType === "normal_transition") {
-        // Legitimate cross-unit state change — close the earlier claim.
-        await updateClaimValidTo(claimA.claimId, claimB.validFromScene);
-
+        // Legitimate cross-unit state change — the earlier claim remains valid
+        // within its own unit. Do not set valid_to_scene to a scene number
+        // from a different story unit.
         log({
           agent: "guardian",
           universeId,
@@ -219,7 +221,9 @@ export async function runCrossUnitPass(
           },
         });
       } else {
-        // confirmed or ambiguous — write finding, then close the earlier claim.
+        // confirmed or ambiguous — write finding.
+        // Do not mutate valid_to_scene: the earlier claim is valid within its
+        // own unit's scene sequence regardless of what a later unit says.
         const projectId = claimA.projectId;
 
         const finding = await writeFinding({
@@ -238,8 +242,6 @@ export async function runCrossUnitPass(
 
         findings.push(finding);
         recordFindingWritten(verdict.conflictType, "cross_unit");
-
-        await updateClaimValidTo(claimA.claimId, claimB.validFromScene);
 
         log({
           agent: "guardian",

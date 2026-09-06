@@ -223,15 +223,23 @@ export const Q = {
   `,
 
   SELECT_STORY_UNIT: `
-    SELECT * FROM lmm.story_units
-    WHERE story_unit_id = {story_unit_id: String}
+    SELECT
+      su.*,
+      p.canon_tier
+    FROM lmm.story_units su
+    JOIN lmm.projects p ON su.project_id = p.project_id
+    WHERE su.story_unit_id = {story_unit_id: String}
     LIMIT 1
   `,
 
   SELECT_STORY_UNITS_FOR_UNIVERSE: `
-    SELECT * FROM lmm.story_units
-    WHERE universe_id = {universe_id: String}
-    ORDER BY release_order
+    SELECT
+      su.*,
+      p.canon_tier
+    FROM lmm.story_units su
+    JOIN lmm.projects p ON su.project_id = p.project_id
+    WHERE su.universe_id = {universe_id: String}
+    ORDER BY su.release_order
   `,
 
   UPDATE_STORY_UNIT_STATUS: `

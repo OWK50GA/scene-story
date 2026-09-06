@@ -363,16 +363,14 @@ export async function buildCrossUnitDossier(
 
   // ------------------------------------------------------------------
   // Step 3 — Events from both units, resolved to canonical names.
-  //          earlierUnit: from sceneA to end (use a large sentinel for "end")
+  //          earlierUnit: from sceneA to end of that unit
   //          laterUnit: from start (scene 0) to sceneB
   // ------------------------------------------------------------------
-  const SCENE_END_SENTINEL = 99999;
-
   const [earlierUnitEvents, laterUnitEvents] = await Promise.all([
     getEventsBetweenScenes(
       earlierUnit.storyUnitId,
       earlier.validFromScene,
-      SCENE_END_SENTINEL,
+      earlierUnit.sceneCount,
     ),
     getEventsBetweenScenes(
       laterUnit.storyUnitId,

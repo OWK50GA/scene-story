@@ -77,7 +77,6 @@ function makeEvent(overrides: Partial<ResolvedEvent> = {}): ResolvedEvent {
     universeId: "universe-1",
     sceneNumber: 7,
     action: "removes",
-    objectEntityId: "entity-1",
     description: "Meinhardt removes the Cipher Device from his safe.",
     inUniversePeriod: "World War II, 1943",
     subjectName: "Colonel Meinhardt",
@@ -333,7 +332,7 @@ describe("buildDossierPrompt", () => {
   });
 
   it("renders event with null object correctly (no arrow)", () => {
-    const event = makeEvent({ objectName: null, objectEntityId: null });
+    const event = makeEvent({ objectName: null });
     const dossier = makeDossier({ relevantEvents: [event] });
     const result = buildDossierPrompt(dossier);
     // Should not contain " → null" or an arrow with nothing after it
