@@ -96,6 +96,7 @@ export type StoryUnit = {
   ingestionStatus: IngestionStatus;
   sceneCount: number;
   claimCount: number;
+  canonTier: number | null;
 };
 
 /**

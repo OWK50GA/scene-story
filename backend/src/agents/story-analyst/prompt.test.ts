@@ -26,6 +26,7 @@ function makeUnit(overrides: Partial<StoryUnit> = {}): StoryUnit {
     ingestionStatus: "pending",
     sceneCount: 14,
     claimCount: 0,
+    canonTier: 1,
     ...overrides,
   };
 }

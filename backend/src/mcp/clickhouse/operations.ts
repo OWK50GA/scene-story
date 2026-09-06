@@ -75,6 +75,7 @@ function rowToStoryUnit(r: Record<string, unknown>): StoryUnit {
     ingestionStatus: r.ingestion_status as IngestionStatus,
     sceneCount: Number(r.scene_count),
     claimCount: Number(r.claim_count),
+    canonTier: r.canon_tier != null ? Number(r.canon_tier) : null,
   };
 }
 
@@ -809,6 +810,25 @@ export async function getEntityHistory(entityId: string): Promise<Claim[]> {
     { entity_id: entityId },
     rowToClaim,
   );
+}
+
+// Fetch a single claim by its primary key.
+// Used by Guardian dossier assembly to hydrate claim IDs returned by conflict detection queries.
+export async function getClaim(claimId: string): Promise<Claim> {
+  const rows = await select(
+    "getClaim",
+    Q.SELECT_CLAIM_BY_ID,
+    { claim_id: claimId },
+    rowToClaim,
+  );
+  if (rows.length === 0) {
+    throw new MCPOperationError(
+      "getClaim",
+      "claim.not_found",
+      `Claim ${claimId} not found`,
+    );
+  }
+  return rows[0]!;
 }
 
 // Guardian-only mutation — update valid_to_scene on a claim.

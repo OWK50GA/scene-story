@@ -8,6 +8,7 @@ import {
   updateStoryUnitCounts,
 } from "../../mcp/clickhouse/operations.js";
 import { processScene } from "../story-analyst/agent.js";
+import { guardianAgent } from "../continuity-guardian/agent.js";
 import { log } from "../../observability/logger.js";
 import {
   recordSceneIngestionDuration,
@@ -324,49 +325,22 @@ export async function runIngestionPipeline(
  * runWithinUnitGuardian
  *
  * Triggers the Continuity Guardian's within-unit pass for a story unit.
- *
- * STUB — Task 10 wires the real Guardian here.
- * Returns an empty findings list until then.
  */
 export async function runWithinUnitGuardian(
   storyUnitId: string,
 ): Promise<GuardianSummary> {
-  // TODO: Task 10 — replace with Guardian sub-agent call:
-  //   const result = await guardianAgent.analyzeUnit(storyUnitId);
-  //   return { findingsCount: result.findings.length, findings: result.findings };
-  log({
-    agent: "director",
-    universeId: "unknown",
-    storyUnitId,
-    eventType: "within_unit_guardian_stub",
-    status: "success",
-    detail: { note: "Guardian not yet implemented — Task 10" },
-  });
-  return { findingsCount: 0, findings: [] };
+  return guardianAgent.analyzeUnit(storyUnitId);
 }
 
 /**
  * runCrossUnitGuardian
  *
  * Triggers the Continuity Guardian's cross-unit pass for a universe.
- *
- * STUB — Task 11 wires the real Guardian here.
- * Returns an empty findings list until then.
  */
 export async function runCrossUnitGuardian(
   universeId: string,
 ): Promise<GuardianSummary> {
-  // TODO: Task 11 — replace with Guardian sub-agent call:
-  //   const result = await guardianAgent.analyzeUniverse(universeId);
-  //   return { findingsCount: result.findings.length, findings: result.findings };
-  log({
-    agent: "director",
-    universeId,
-    eventType: "cross_unit_guardian_stub",
-    status: "success",
-    detail: { note: "Guardian not yet implemented — Task 11" },
-  });
-  return { findingsCount: 0, findings: [] };
+  return guardianAgent.analyzeUniverse(universeId);
 }
 
 /**

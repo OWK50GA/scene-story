@@ -383,6 +383,14 @@ export const Q = {
     ORDER BY c.valid_from_scene
   `,
 
+  // Single claim by primary key — used by Guardian dossier assembly.
+  SELECT_CLAIM_BY_ID: `
+    SELECT *
+    FROM lmm.claims
+    WHERE claim_id = {claim_id: String}
+    LIMIT 1
+  `,
+
   // All claims for an entity across all story units — entity history view.
   // su columns that share names with claim columns are aliased to avoid collisions.
   SELECT_ENTITY_HISTORY: `
