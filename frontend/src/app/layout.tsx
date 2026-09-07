@@ -1,6 +1,7 @@
 import { ThemeProvider } from "@wrksz/themes/next";
 import type { Metadata } from "next";
 import { Courier_Prime, IBM_Plex_Mono, Manrope } from "next/font/google";
+import type { ReactNode } from "react";
 import "./globals.css";
 
 const fontSans = Manrope({
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     "A live story-state engine. Catch continuity errors before they reach production, and answer audience questions without spoiling what they haven't seen yet.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="en"
