@@ -523,6 +523,35 @@ export const Q = {
     ORDER BY c.canon_tier ASC, su.in_universe_date_start NULLS LAST
   `,
 
+  // Finding mutation — the only mutable field after creation.
+  UPDATE_FINDING_STATUS: `
+    ALTER TABLE lmm.continuity_findings
+    UPDATE status = {status: String}
+    WHERE finding_id = {finding_id: String}
+  `,
+
+  // All claims for a story unit — used by the /units/:id/claims HTTP endpoint.
+  SELECT_CLAIMS_FOR_UNIT: `
+    SELECT
+      c.*,
+      e.canonical_name AS entity_name
+    FROM lmm.claims c
+    JOIN lmm.universe_entities e ON c.universe_entity_id = e.entity_id
+    WHERE c.story_unit_id = {story_unit_id: String}
+    ORDER BY c.source_scene_number, c.valid_from_scene
+  `,
+
+  // Story units for a project — used by the /projects/:id/units HTTP endpoint.
+  SELECT_STORY_UNITS_FOR_PROJECT: `
+    SELECT
+      su.*,
+      p.canon_tier
+    FROM lmm.story_units su
+    JOIN lmm.projects p ON su.project_id = p.project_id
+    WHERE su.project_id = {project_id: String}
+    ORDER BY su.release_order
+  `,
+
   // Guardian mutations — narrow, named operations so nothing else can
   // accidentally mutate these two fields.
   UPDATE_CLAIM_VALID_TO: `

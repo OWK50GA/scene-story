@@ -4,6 +4,8 @@ import {
   createStoryUnitHttp,
   getIngestionStatusHttp,
   getIngestionStatusStreamHttp,
+  getScenesForUnitHttp,
+  getClaimsForUnitHttp,
   ingestFileHttp,
   upload,
 } from "../controllers/units.js";
@@ -263,10 +265,10 @@ router.get("/:id/status", getIngestionStatusHttp);
  *       **Event types:**
  *
  *       `scene_complete` — emitted after each successfully processed scene.
- *       Data: `{ sceneNumber, claimsWritten, status: "complete" }`
+ *       Data: `{ scene_number, claims_written, status: "complete" }`
  *
  *       `scene_failed` — emitted when a scene fails extraction after retry.
- *       Data: `{ sceneNumber, reason }`
+ *       Data: `{ scene_number, reason }`
  *
  *       `ingestion_complete` — emitted when all scenes are done. Stream closes after this.
  *       Data: `{ scene_count, claim_count, failed_scenes: number[], ingestion_status }`
@@ -354,5 +356,109 @@ router.get("/:id/ingest-stream", getIngestionStatusStreamHttp);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/:id/analyze", analyzeStoryUnitHttp);
+
+/**
+ * @swagger
+ * /units/{id}/scenes:
+ *   get:
+ *     summary: List all scenes for a story unit
+ *     description: >
+ *       Returns every scene for the unit in scene-number order, including
+ *       the raw screenplay text. Used by the screenplay reader to render
+ *       the script with highlight anchoring.
+ *     tags: [Story Units]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Scenes for the unit
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     scenes:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Scene'
+ *                     scene_count:
+ *                       type: integer
+ *       404:
+ *         description: Story unit not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get("/:id/scenes", getScenesForUnitHttp);
+
+/**
+ * @swagger
+ * /units/{id}/claims:
+ *   get:
+ *     summary: List all claims extracted from a story unit
+ *     description: >
+ *       Returns every claim written during ingestion for this unit, enriched
+ *       with entity name, source_scene_number, confidence, source_type, and
+ *       source_line. Used by the Story State screen with scene filtering.
+ *     tags: [Story Units]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Claims for the unit
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     claims:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Claim'
+ *                     claim_count:
+ *                       type: integer
+ *       404:
+ *         description: Story unit not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.get("/:id/claims", getClaimsForUnitHttp);
 
 export default router;

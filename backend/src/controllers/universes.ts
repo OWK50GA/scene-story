@@ -6,8 +6,10 @@ import {
   getUniverse,
   getWorldState,
   listUniverses,
+  getClaim,
 } from "../mcp/clickhouse/operations.js";
 import type {
+  Claim,
   Universe,
   ContinuityFinding,
   WorldStateEntry,
@@ -60,7 +62,31 @@ function serialiseUniverse(u: Universe) {
   };
 }
 
-function serialiseFinding(f: ContinuityFinding) {
+function serialiseClaim(c: Claim) {
+  return {
+    claim_id: c.claimId,
+    universe_entity_id: c.universeEntityId,
+    story_unit_id: c.storyUnitId,
+    source_scene_number: c.sourceSceneNumber,
+    property: c.property,
+    value: c.value,
+    source_type: c.sourceType,
+    confidence: c.confidence,
+    confidence_rationale: c.confidenceRationale,
+    source_line: c.sourceLine,
+    valid_from_scene: c.validFromScene,
+    valid_to_scene: c.validToScene,
+    in_universe_period: c.inUniversePeriod,
+    canon_tier: c.canonTier,
+    superseded_by_canon: c.supersededByCanon,
+  };
+}
+
+function serialiseFinding(
+  f: ContinuityFinding,
+  claimA?: Claim,
+  claimB?: Claim,
+) {
   return {
     finding_id: f.findingId,
     universe_id: f.universeId,
@@ -69,6 +95,8 @@ function serialiseFinding(f: ContinuityFinding) {
     story_unit_id_b: f.storyUnitIdB,
     claim_a_id: f.claimAId,
     claim_b_id: f.claimBId,
+    claim_a: claimA ? serialiseClaim(claimA) : null,
+    claim_b: claimB ? serialiseClaim(claimB) : null,
     conflict_type: f.conflictType,
     severity: f.severity,
     scope: f.scope,
@@ -93,7 +121,9 @@ function serialiseWorldStateEntry(e: WorldStateEntry) {
 function serialiseGuardianSummary(s: GuardianSummary) {
   return {
     findings_count: s.findingsCount,
-    findings: s.findings.map(serialiseFinding),
+    // Guardian summary findings are returned without resolved claim content —
+    // the full claims are available via GET /projects/:id/findings.
+    findings: s.findings.map((f) => serialiseFinding(f)),
   };
 }
 
@@ -276,11 +306,22 @@ export async function getUniverseFindingsHttp(req: Request, res: Response) {
 
   try {
     const findings = await getCrossUnitFindingsForUniverse(parsed.data.id);
+
+    const enriched = await Promise.all(
+      findings.map(async (f) => {
+        const [claimA, claimB] = await Promise.all([
+          getClaim(f.claimAId).catch(() => undefined),
+          getClaim(f.claimBId).catch(() => undefined),
+        ]);
+        return serialiseFinding(f, claimA, claimB);
+      }),
+    );
+
     return res.status(200).json({
       status: "success",
       data: {
-        findings: findings.map(serialiseFinding),
-        finding_count: findings.length,
+        findings: enriched,
+        finding_count: enriched.length,
       },
     });
   } catch (err) {

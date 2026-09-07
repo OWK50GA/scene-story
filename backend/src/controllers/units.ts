@@ -8,10 +8,14 @@ import {
   getStoryUnit,
   getFailedSceneNumbers,
   insertScene,
+  getScenesForUnit,
+  getClaimsForUnit,
 } from "../mcp/clickhouse/operations.js";
 import {
   ContinuityFinding,
   MCPOperationError,
+  Scene,
+  Claim,
   StoryUnit,
 } from "../types/index.js";
 import { z } from "zod";
@@ -97,7 +101,6 @@ function serialiseFinding(f: ContinuityFinding) {
     status: f.status,
   };
 }
-
 function serialiseGuardianSummary(s: GuardianSummary) {
   return {
     findings_count: s.findingsCount,
@@ -431,3 +434,103 @@ export async function analyzeStoryUnitHttp(req: Request, res: Response) {
     return handleError(err, res);
   }
 }
+
+// ---------------------------------------------------------------------------
+// Scene serialiser
+// ---------------------------------------------------------------------------
+
+function serialiseScene(s: Scene) {
+  return {
+    scene_id: s.sceneId,
+    story_unit_id: s.storyUnitId,
+    scene_number: s.sceneNumber,
+    heading: s.heading,
+    raw_text: s.rawText,
+    ingestion_status: s.ingestionStatus,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Claim serialiser — full enriched shape for the Story State screen
+// ---------------------------------------------------------------------------
+
+function serialiseClaim(c: Claim & { entityName?: string }) {
+  return {
+    claim_id: c.claimId,
+    universe_entity_id: c.universeEntityId,
+    entity_name: c.entityName ?? null,
+    story_unit_id: c.storyUnitId,
+    source_scene_number: c.sourceSceneNumber,
+    property: c.property,
+    value: c.value,
+    source_type: c.sourceType,
+    confidence: c.confidence,
+    confidence_rationale: c.confidenceRationale,
+    source_line: c.sourceLine,
+    valid_from_scene: c.validFromScene,
+    valid_to_scene: c.validToScene,
+    in_universe_period: c.inUniversePeriod,
+    canon_tier: c.canonTier,
+    superseded_by_canon: c.supersededByCanon,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// GET /units/:id/scenes
+// ---------------------------------------------------------------------------
+
+export async function getScenesForUnitHttp(req: Request, res: Response) {
+  const parsed = StoryUnitParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue?.path[0])}: ${issue?.message}`,
+    });
+  }
+
+  try {
+    // Verify unit exists first so we return 404 rather than an empty array.
+    await getStoryUnit(parsed.data.id);
+    const scenes = await getScenesForUnit(parsed.data.id);
+    return res.status(200).json({
+      status: "success",
+      data: {
+        scenes: scenes.map(serialiseScene),
+        scene_count: scenes.length,
+      },
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// GET /units/:id/claims
+// ---------------------------------------------------------------------------
+
+export async function getClaimsForUnitHttp(req: Request, res: Response) {
+  const parsed = StoryUnitParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue?.path[0])}: ${issue?.message}`,
+    });
+  }
+
+  try {
+    await getStoryUnit(parsed.data.id);
+    const claims = await getClaimsForUnit(parsed.data.id);
+    return res.status(200).json({
+      status: "success",
+      data: {
+        claims: claims.map(serialiseClaim),
+        claim_count: claims.length,
+      },
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
+}
+
