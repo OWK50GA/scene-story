@@ -23,8 +23,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
           cache-dependency-path: backend/pnpm-lock.yaml
 
       - name: Install dependencies
@@ -55,21 +55,21 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'pnpm'
+          node-version: "22"
+          cache: "pnpm"
           cache-dependency-path: frontend/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
-      # - name: TypeScript type check
-      #   run: pnpm run typecheck
-      #   working-directory: frontend
+      - name: TypeScript type check
+        run: pnpm run typecheck
+        working-directory: frontend
 
-      # - name: Lint (Biome)
-      #   run: pnpm run lint
-      #   working-directory: frontend
+      - name: Lint (Biome)
+        run: pnpm run lint
+        working-directory: frontend
 
       - name: Next.js build
         run: pnpm run build
