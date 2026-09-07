@@ -223,15 +223,23 @@ export const Q = {
   `,
 
   SELECT_STORY_UNIT: `
-    SELECT * FROM lmm.story_units
-    WHERE story_unit_id = {story_unit_id: String}
+    SELECT
+      su.*,
+      p.canon_tier
+    FROM lmm.story_units su
+    JOIN lmm.projects p ON su.project_id = p.project_id
+    WHERE su.story_unit_id = {story_unit_id: String}
     LIMIT 1
   `,
 
   SELECT_STORY_UNITS_FOR_UNIVERSE: `
-    SELECT * FROM lmm.story_units
-    WHERE universe_id = {universe_id: String}
-    ORDER BY release_order
+    SELECT
+      su.*,
+      p.canon_tier
+    FROM lmm.story_units su
+    JOIN lmm.projects p ON su.project_id = p.project_id
+    WHERE su.universe_id = {universe_id: String}
+    ORDER BY su.release_order
   `,
 
   UPDATE_STORY_UNIT_STATUS: `
@@ -381,6 +389,14 @@ export const Q = {
       AND c.valid_to_scene IS NULL
       AND c.superseded_by_canon = 0
     ORDER BY c.valid_from_scene
+  `,
+
+  // Single claim by primary key — used by Guardian dossier assembly.
+  SELECT_CLAIM_BY_ID: `
+    SELECT *
+    FROM lmm.claims
+    WHERE claim_id = {claim_id: String}
+    LIMIT 1
   `,
 
   // All claims for an entity across all story units — entity history view.

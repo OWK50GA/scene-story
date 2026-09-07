@@ -1,7 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
-  "description": "Agentic Commerce backend",
+  "description": "Bloodraven",
   "main": "index.js",
   "types": "dist/index.d.ts",
   "scripts": {
