@@ -58,6 +58,7 @@ export function parseScreenplay(raw: string): {
     const text = rawLines[i].trim();
     if (text === "") {
       lastContent = false;
+      prevRole = null;
       continue;
     }
 
@@ -142,12 +143,20 @@ export function findClaimLine(
     norm: normalizeText(line.text),
   }));
 
-  // A source quote may wrap across the physical lines of the fixture, so try
-  // progressively shorter prefixes until one fits on a single rendered line.
-  for (let size = needleWords.length; size >= 3; size -= 1) {
-    const needle = needleWords.slice(0, size).join(" ");
-    const match = normalizedLines.find((entry) => entry.norm.includes(needle));
-    if (match !== undefined) return match.index;
+  // A source quote may wrap across the physical lines of the fixture, so scan
+  // windows of adjacent scene lines and require the full normalized quote to
+  // appear contiguously. Return the index of the first line in the window.
+  const needle = needleWords.join(" ");
+  for (let start = 0; start < normalizedLines.length; start += 1) {
+    let windowText = "";
+    for (let end = start; end < normalizedLines.length; end += 1) {
+      windowText =
+        windowText === ""
+          ? normalizedLines[end].norm
+          : `${windowText} ${normalizedLines[end].norm}`;
+      if (windowText.includes(needle)) return normalizedLines[start].index;
+      if (windowText.length >= needle.length + 160) break;
+    }
   }
 
   return null;

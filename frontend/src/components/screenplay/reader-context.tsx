@@ -99,10 +99,11 @@ export function ScreenplayReaderProvider({
       ambiguous: 0,
     };
     for (const finding of findings) {
-      if (finding.status === "open") counts[finding.conflict] += 1;
+      const status = statuses[finding.id] ?? finding.status;
+      if (status === "open") counts[finding.conflict] += 1;
     }
     return counts;
-  }, [findings]);
+  }, [findings, statuses]);
 
   const selectAnnotation = useCallback(function selectAnnotation(
     annotation: TextAnnotation | null,
@@ -149,7 +150,13 @@ export function ScreenplayReaderProvider({
       annotations,
       annotationsForFinding: (findingId) => byFinding.get(findingId) ?? [],
       annotationForLine: (lineIndex) =>
-        byLine.get(lineIndex)?.find((a) => !hidden.has(a.conflict)),
+        byLine
+          .get(lineIndex)
+          ?.find(
+            (a) =>
+              !hidden.has(a.conflict) &&
+              (statuses[a.findingId] ?? "open") === "open",
+          ),
       hidden,
       toggleConflict,
       selected,

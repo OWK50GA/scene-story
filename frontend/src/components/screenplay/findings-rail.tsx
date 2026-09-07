@@ -184,11 +184,20 @@ function FindingRow({ finding }: { finding: Finding }) {
 }
 
 export function FindingsRail() {
-  const { mode, findings, annotations } = useScreenplayReader();
+  const { mode, findings, annotations, statusOf, hidden } =
+    useScreenplayReader();
 
   if (mode !== "review") return null;
 
-  const hasOpen = findings.some((finding) => finding.status === "open");
+  const openCount = findings.filter(
+    (finding) => statusOf(finding.id) === "open",
+  ).length;
+  const visibleHighlightCount = annotations.filter(
+    (annotation) =>
+      statusOf(annotation.findingId) === "open" &&
+      !hidden.has(annotation.conflict),
+  ).length;
+  const hasOpen = openCount > 0;
 
   return (
     <aside className="hidden lg:block">
@@ -196,8 +205,7 @@ export function FindingsRail() {
         <div className="border-b border-border px-5 py-3">
           <p className="text-sm font-semibold">Findings</p>
           <p className="font-mono text-[11px] text-muted-foreground">
-            {annotations.length} highlights ·{" "}
-            {findings.filter((f) => f.status === "open").length} open
+            {visibleHighlightCount} highlights · {openCount} open
           </p>
         </div>
         <div className="scroll-stable max-h-[70vh] overflow-y-auto">
