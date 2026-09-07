@@ -24,6 +24,7 @@ import {
   type TemporalRelationType,
   type FindingScope,
   type FindingSeverity,
+  type FindingStatus,
   type WorldStateEntry,
 } from "../../types/index.js";
 
@@ -1051,6 +1052,70 @@ export async function getCrossUnitFindingsForUniverse(
     Q.SELECT_CROSS_UNIT_FINDINGS_FOR_UNIVERSE,
     { universe_id: universeId },
     rowToFinding,
+  );
+}
+
+export async function getFinding(
+  findingId: string,
+): Promise<ContinuityFinding> {
+  const rows = await select(
+    "getFinding",
+    Q.SELECT_FINDING_BY_ID,
+    { finding_id: findingId },
+    rowToFinding,
+  );
+  if (rows.length === 0) {
+    throw new MCPOperationError(
+      "getFinding",
+      "finding.not_found",
+      `Finding ${findingId} not found`,
+    );
+  }
+  return rows[0]!;
+}
+
+export async function updateFindingStatus(
+  findingId: string,
+  status: FindingStatus,
+): Promise<void> {
+  await command("updateFindingStatus", Q.UPDATE_FINDING_STATUS, {
+    finding_id: findingId,
+    status,
+  });
+}
+
+// =============================================================================
+// Claims listing — HTTP endpoint support
+// =============================================================================
+
+export type ClaimWithEntityName = Claim & { entityName: string };
+
+export async function getClaimsForUnit(
+  storyUnitId: string,
+): Promise<ClaimWithEntityName[]> {
+  return select(
+    "getClaimsForUnit",
+    Q.SELECT_CLAIMS_FOR_UNIT,
+    { story_unit_id: storyUnitId },
+    (r) => ({
+      ...rowToClaim(r),
+      entityName: r.entity_name as string,
+    }),
+  );
+}
+
+// =============================================================================
+// Story unit listing by project — HTTP endpoint support
+// =============================================================================
+
+export async function getStoryUnitsForProject(
+  projectId: string,
+): Promise<StoryUnit[]> {
+  return select(
+    "getStoryUnitsForProject",
+    Q.SELECT_STORY_UNITS_FOR_PROJECT,
+    { project_id: projectId },
+    rowToStoryUnit,
   );
 }
 

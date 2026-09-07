@@ -97,9 +97,9 @@ const ANOMALY_DURATION_MULTIPLIER = 5;
  *   2. cross-unit Guardian pass
  *
  * Progress is emitted to the caller via the supplied EventEmitter:
- *   "scene_complete" — { sceneNumber, claimsWritten, status: "complete" }
- *   "scene_failed"   — { sceneNumber, reason }
- *   "ingestion_complete" — { sceneCount, claimCount, failedScenes }
+ *   "scene_complete" — { scene_number, claims_written, status: "complete" }
+ *   "scene_failed"   — { scene_number, reason }
+ *   "ingestion_complete" — { scene_count, claim_count, failed_scenes }
  *
  * Never throws. On fatal errors (can't load unit or scenes) emits
  * "ingestion_complete" with all scenes marked failed.
@@ -134,9 +134,9 @@ export async function runIngestionPipeline(
       detail: { error: message },
     });
     emitter.emit("ingestion_complete", {
-      sceneCount: 0,
-      claimCount: 0,
-      failedScenes: [],
+      scene_count: 0,
+      claim_count: 0,
+      failed_scenes: [],
     });
     return {
       storyUnitId,
@@ -168,9 +168,9 @@ export async function runIngestionPipeline(
       detail: { error: message },
     });
     emitter.emit("ingestion_complete", {
-      sceneCount: 0,
-      claimCount: 0,
-      failedScenes: [],
+      scene_count: 0,
+      claim_count: 0,
+      failed_scenes: [],
     });
     return {
       storyUnitId,
@@ -248,14 +248,14 @@ export async function runIngestionPipeline(
     if (result.status === "failed") {
       failedScenes.push(scene.sceneNumber);
       emitter.emit("scene_failed", {
-        sceneNumber: scene.sceneNumber,
+        scene_number: scene.sceneNumber,
         reason: result.error ?? "unknown",
       });
     } else {
       totalClaimsWritten += result.claimsWritten;
       emitter.emit("scene_complete", {
-        sceneNumber: scene.sceneNumber,
-        claimsWritten: result.claimsWritten,
+        scene_number: scene.sceneNumber,
+        claims_written: result.claimsWritten,
         status: "complete",
       });
     }
@@ -285,9 +285,9 @@ export async function runIngestionPipeline(
   );
 
   emitter.emit("ingestion_complete", {
-    sceneCount: sceneTotal,
-    claimCount: totalClaimsWritten,
-    failedScenes: failedSceneNumbers,
+    scene_count: sceneTotal,
+    claim_count: totalClaimsWritten,
+    failed_scenes: failedSceneNumbers,
   });
 
   await flushMetrics().catch(() => {});
