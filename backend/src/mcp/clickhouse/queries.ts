@@ -523,6 +523,13 @@ export const Q = {
     ORDER BY c.canon_tier ASC, su.in_universe_date_start NULLS LAST
   `,
 
+  // Single finding by primary key — used for ownership checks before mutations.
+  SELECT_FINDING_BY_ID: `
+    SELECT * FROM lmm.continuity_findings
+    WHERE finding_id = {finding_id: String}
+    LIMIT 1
+  `,
+
   // Finding mutation — the only mutable field after creation.
   UPDATE_FINDING_STATUS: `
     ALTER TABLE lmm.continuity_findings

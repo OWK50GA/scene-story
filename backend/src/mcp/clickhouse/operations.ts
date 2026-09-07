@@ -1055,6 +1055,25 @@ export async function getCrossUnitFindingsForUniverse(
   );
 }
 
+export async function getFinding(
+  findingId: string,
+): Promise<ContinuityFinding> {
+  const rows = await select(
+    "getFinding",
+    Q.SELECT_FINDING_BY_ID,
+    { finding_id: findingId },
+    rowToFinding,
+  );
+  if (rows.length === 0) {
+    throw new MCPOperationError(
+      "getFinding",
+      "finding.not_found",
+      `Finding ${findingId} not found`,
+    );
+  }
+  return rows[0]!;
+}
+
 export async function updateFindingStatus(
   findingId: string,
   status: FindingStatus,

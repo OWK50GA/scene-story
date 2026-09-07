@@ -5,6 +5,7 @@ import {
   getFindingsForProject,
   getStoryUnitsForProject,
   getClaim,
+  getFinding,
   updateFindingStatus,
   getProject,
 } from "../mcp/clickhouse/operations.js";
@@ -174,8 +175,22 @@ export async function getFindingsForProjectHttp(req: Request, res: Response) {
     const enriched = await Promise.all(
       projectFindings.map(async (f) => {
         const [claimA, claimB] = await Promise.all([
-          getClaim(f.claimAId).catch(() => undefined),
-          getClaim(f.claimBId).catch(() => undefined),
+          getClaim(f.claimAId).catch((err: unknown) => {
+            if (
+              err instanceof MCPOperationError &&
+              err.code === "claim.not_found"
+            )
+              return undefined;
+            throw err;
+          }),
+          getClaim(f.claimBId).catch((err: unknown) => {
+            if (
+              err instanceof MCPOperationError &&
+              err.code === "claim.not_found"
+            )
+              return undefined;
+            throw err;
+          }),
         ]);
         return serialiseFinding(f, claimA, claimB);
       }),
@@ -241,17 +256,27 @@ export async function patchFindingStatusHttp(req: Request, res: Response) {
     });
   }
 
-  const { findingId } = parsedParam.data;
+  const { id: projectId, findingId } = parsedParam.data;
   const { status } = parsedBody.data;
 
   try {
+    // Fetch the finding first — verifies it exists and belongs to this project.
+    const finding = await getFinding(findingId);
+    if (finding.projectId !== projectId) {
+      return res.status(404).json({
+        status: "error",
+        message: `Finding ${findingId} not found`,
+        code: "finding.not_found",
+      });
+    }
+
     await updateFindingStatus(findingId, status as FindingStatus);
     return res.status(200).json({
       status: "success",
       data: { finding_id: findingId, status },
     });
   } catch (err) {
-    if (err instanceof MCPOperationError && err.code.endsWith("not_found")) {
+    if (err instanceof MCPOperationError && err.code === "finding.not_found") {
       return res
         .status(404)
         .json({ status: "error", message: err.message, code: err.code });

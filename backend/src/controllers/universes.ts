@@ -310,8 +310,22 @@ export async function getUniverseFindingsHttp(req: Request, res: Response) {
     const enriched = await Promise.all(
       findings.map(async (f) => {
         const [claimA, claimB] = await Promise.all([
-          getClaim(f.claimAId).catch(() => undefined),
-          getClaim(f.claimBId).catch(() => undefined),
+          getClaim(f.claimAId).catch((err: unknown) => {
+            if (
+              err instanceof MCPOperationError &&
+              err.code === "claim.not_found"
+            )
+              return undefined;
+            throw err;
+          }),
+          getClaim(f.claimBId).catch((err: unknown) => {
+            if (
+              err instanceof MCPOperationError &&
+              err.code === "claim.not_found"
+            )
+              return undefined;
+            throw err;
+          }),
         ]);
         return serialiseFinding(f, claimA, claimB);
       }),
