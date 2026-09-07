@@ -1,6 +1,6 @@
 "use client";
 
-import { FileSearch, ScanSearch, UploadCloud } from "lucide-react";
+import { BookOpen, FileSearch, ScanSearch, UploadCloud } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { href: "/creator/ingest", label: "Ingest", icon: UploadCloud },
+  { href: "/creator/screenplay", label: "Read", icon: BookOpen },
   { href: "/creator/state", label: "Story State", icon: ScanSearch },
   { href: "/creator/findings", label: "Findings", icon: FileSearch },
 ] as const;
