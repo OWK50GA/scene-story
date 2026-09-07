@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@wrksz/themes/next";
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Manrope } from "next/font/google";
+import { Courier_Prime, IBM_Plex_Mono, Manrope } from "next/font/google";
 import "./globals.css";
 
 const fontSans = Manrope({
@@ -12,6 +12,13 @@ const fontSans = Manrope({
 const fontMono = IBM_Plex_Mono({
   weight: ["400", "500", "600"],
   variable: "--font-plex-mono",
+  subsets: ["latin"],
+});
+
+const fontScript = Courier_Prime({
+  weight: ["400", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-courier-prime",
   subsets: ["latin"],
 });
 
@@ -29,7 +36,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       suppressHydrationWarning
-      className={`${fontSans.variable} ${fontMono.variable} h-full antialiased`}
+      className={`${fontSans.variable} ${fontMono.variable} ${fontScript.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background font-sans text-foreground">
         <ThemeProvider
