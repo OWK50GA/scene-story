@@ -1198,6 +1198,75 @@ export async function getCompanionFacts(
 }
 
 // =============================================================================
+// Audience Companion — historical and event queries
+// =============================================================================
+
+/**
+ * getHistoricalClaimsForEntities — full claim chain for a list of entity IDs
+ * within one story unit up to and including `upToScene`.
+ *
+ * Unlike getCompanionFacts / getCurrentState, this does NOT filter out
+ * superseded claims — it returns the full history so the pack-builder can show
+ * causal progression. Superseded rows are flagged via `supersededByCanon` and
+ * will have `isHistorical: true` in the PackFact constructed by the pack-builder.
+ *
+ * Spoiler boundary is enforced at SQL level: source_scene_number <= upToScene.
+ */
+export async function getHistoricalClaimsForEntities(
+  storyUnitId: string,
+  entityIds: string[],
+  upToScene: number,
+): Promise<Array<Claim & { entityName: string }>> {
+  if (entityIds.length === 0) return [];
+  return select(
+    "getHistoricalClaimsForEntities",
+    Q.SELECT_HISTORICAL_CLAIMS_FOR_ENTITIES,
+    {
+      story_unit_id: storyUnitId,
+      entity_ids: entityIds,
+      up_to_scene: upToScene,
+    },
+    (r) => ({
+      ...rowToClaim(r),
+      entityName: r.entity_name as string,
+    }),
+  );
+}
+
+/**
+ * getEventsForEntities — all events in which any of the given entity IDs
+ * appear as subject or object, within one story unit up to `upToScene`.
+ *
+ * Used in three places by the pack-builder:
+ *   - scene digest building (all entities, all scenes)
+ *   - historical mode one-hop event expansion
+ *   - summary mode (all entities, full boundary)
+ *
+ * Spoiler boundary is enforced at SQL level: scene_number <= upToScene.
+ */
+export async function getEventsForEntities(
+  storyUnitId: string,
+  entityIds: string[],
+  upToScene: number,
+): Promise<Array<Event & { subjectName: string; objectName: string | null }>> {
+  if (entityIds.length === 0) return [];
+  return select(
+    "getEventsForEntities",
+    Q.SELECT_EVENTS_FOR_ENTITIES,
+    {
+      story_unit_id: storyUnitId,
+      entity_ids: entityIds,
+      up_to_scene: upToScene,
+    },
+    (r) => ({
+      ...rowToEvent(r),
+      subjectName: r.subject_name as string,
+      objectName: (r.object_name as string | null) ?? null,
+    }),
+  );
+}
+
+// =============================================================================
 // World state
 // =============================================================================
 

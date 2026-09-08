@@ -640,6 +640,46 @@ export const Q = {
     ORDER BY f.scope, a.valid_from_scene
   `,
 
+  // -------------------------------------------------------------------------
+  // Audience Companion — historical and event queries
+  // -------------------------------------------------------------------------
+
+  // Full claim chain for a list of entities within one story unit, including
+  // superseded claims, ordered by valid_from_scene. Used by historical mode
+  // and summary mode in the pack-builder.
+  // source_scene_number <= upToScene enforces the spoiler boundary at SQL level.
+  SELECT_HISTORICAL_CLAIMS_FOR_ENTITIES: `
+    SELECT
+      c.*,
+      e.canonical_name AS entity_name
+    FROM lmm.claims c
+    JOIN lmm.universe_entities e ON c.universe_entity_id = e.entity_id
+    WHERE c.story_unit_id        = {story_unit_id: String}
+      AND c.universe_entity_id  IN ({entity_ids: Array(String)})
+      AND c.source_scene_number <= {up_to_scene: UInt16}
+    ORDER BY c.valid_from_scene, c.source_scene_number
+  `,
+
+  // All events where the entity appears as subject or object, within one
+  // story unit up to and including upToScene. Used by scene digest building,
+  // historical mode one-hop expansion, and summary mode.
+  SELECT_EVENTS_FOR_ENTITIES: `
+    SELECT
+      ev.*,
+      e_sub.canonical_name AS subject_name,
+      e_obj.canonical_name AS object_name
+    FROM lmm.events ev
+    JOIN lmm.universe_entities e_sub ON ev.subject_entity_id = e_sub.entity_id
+    LEFT JOIN lmm.universe_entities e_obj ON ev.object_entity_id = e_obj.entity_id
+    WHERE ev.story_unit_id = {story_unit_id: String}
+      AND ev.scene_number <= {up_to_scene: UInt16}
+      AND (
+            ev.subject_entity_id IN ({entity_ids: Array(String)})
+         OR ev.object_entity_id  IN ({entity_ids: Array(String)})
+      )
+    ORDER BY ev.scene_number
+  `,
+
   SELECT_CROSS_UNIT_FINDINGS_FOR_UNIVERSE: `
     SELECT f.*,
       a.value AS value_a, a.property, a.source_scene_number AS scene_a,

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   analyzeStoryUnitHttp,
+  askStoryUnitHttp,
   createStoryUnitHttp,
   getIngestionStatusHttp,
   getIngestionStatusStreamHttp,
@@ -460,5 +461,99 @@ router.get("/:id/scenes", getScenesForUnitHttp);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.get("/:id/claims", getClaimsForUnitHttp);
+
+/**
+ * @swagger
+ * /units/{id}/ask:
+ *   post:
+ *     summary: Ask the Audience Companion a question about this story unit
+ *     description: >
+ *       Answers a viewer question using only the structured story memory
+ *       extracted from this story unit, up to and including the specified scene.
+ *       The spoiler boundary is enforced at data retrieval time — facts from
+ *       scenes beyond up_to_scene are never present in the answer context.
+ *     tags: [Story Units]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Story unit ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - question
+ *               - up_to_scene
+ *             properties:
+ *               question:
+ *                 type: string
+ *                 example: "Where is the Cipher Device?"
+ *               up_to_scene:
+ *                 type: integer
+ *                 minimum: 0
+ *                 example: 7
+ *                 description: >
+ *                   Spoiler boundary. Only facts from scenes 1 through this
+ *                   number are included in the answer context.
+ *     responses:
+ *       200:
+ *         description: Answer from the Audience Companion
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 answer:
+ *                   type: string
+ *                 epistemic_state:
+ *                   type: string
+ *                   enum: [known, partial, unknown]
+ *                 facts_used:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: Stable fact IDs from the story memory that support the answer.
+ *                 not_known_aspects:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *                   description: Aspects of the question that the story has not established yet.
+ *                 boundary:
+ *                   type: object
+ *                   properties:
+ *                     story_unit_id:
+ *                       type: string
+ *                       format: uuid
+ *                     up_to_scene:
+ *                       type: integer
+ *                 boundary_enforced:
+ *                   type: boolean
+ *                   example: true
+ *       400:
+ *         description: Validation error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Story unit not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.post("/:id/ask", askStoryUnitHttp);
 
 export default router;
