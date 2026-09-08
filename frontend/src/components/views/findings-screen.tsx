@@ -1,12 +1,19 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, CircleAlert, CircleCheck, CircleOff } from "lucide-react";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import {
+  getProjectFindings,
+  getUnitClaims,
+  patchFindingStatus,
+} from "@/lib/api";
+import { entityNameIndex, findingToDomain } from "@/lib/api/domain-adapters";
 import { CONFLICT_LABEL, type Finding, type FindingStatus } from "@/lib/domain";
-import { filmA } from "@/lib/mock";
 import { cn } from "@/lib/utils";
+import { useWorkspace } from "@/lib/workspace-context";
 
 const severityText: Record<Finding["severity"], string> = {
   high: "text-red-700",
@@ -207,15 +214,49 @@ function FindingItem({
 }
 
 export function FindingsScreen() {
-  const [findings, setFindings] = useState<Finding[]>(filmA.findings);
+  const { workspace } = useWorkspace();
+  const queryClient = useQueryClient();
+  const { projectId, storyUnitId } = workspace;
+
+  const claimsQuery = useQuery({
+    queryKey: ["unit-claims", storyUnitId],
+    queryFn: () => getUnitClaims(storyUnitId as string),
+    enabled: Boolean(storyUnitId),
+  });
+
+  const findingsQuery = useQuery({
+    queryKey: ["project-findings", projectId],
+    queryFn: () => getProjectFindings(projectId as string),
+    enabled: Boolean(projectId),
+  });
+
+  const statusMutation = useMutation({
+    mutationFn: ({
+      findingId,
+      status,
+    }: {
+      findingId: string;
+      status: FindingStatus;
+    }) => patchFindingStatus(projectId as string, findingId, status),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["project-findings", projectId],
+      });
+    },
+  });
+
+  const names = entityNameIndex(claimsQuery.data ?? []);
+  const findings = (findingsQuery.data ?? []).map((f) =>
+    findingToDomain(f, names),
+  );
 
   function handleStatusChange(id: string, status: FindingStatus) {
-    setFindings((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status } : f)),
-    );
+    statusMutation.mutate({ findingId: id, status });
   }
 
   const openCount = findings.filter((f) => f.status === "open").length;
+  const loading =
+    !projectId || findingsQuery.isLoading || claimsQuery.isLoading;
 
   return (
     <div className="flex flex-col gap-4">
@@ -225,7 +266,9 @@ export function FindingsScreen() {
             Continuity findings
           </h2>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            Conflicts the Continuity Guardian flagged against film-a.
+            {loading
+              ? "Loading findings…"
+              : "Conflicts the Continuity Guardian flagged in this story unit."}
           </p>
         </div>
         <span className="font-mono text-xs text-muted-foreground">
@@ -233,7 +276,9 @@ export function FindingsScreen() {
         </span>
       </div>
 
-      {findings.length === 0 ? (
+      {loading ? (
+        <p className="py-10 text-sm text-muted-foreground">Loading findings…</p>
+      ) : findings.length === 0 ? (
         <div className="flex flex-col items-center gap-2 border border-dashed border-border px-6 py-14 text-center">
           <CircleCheck
             className="h-6 w-6 text-success-foreground"

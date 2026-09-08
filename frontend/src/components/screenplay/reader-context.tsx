@@ -40,11 +40,13 @@ export function ScreenplayReaderProvider({
   lines,
   scenes,
   findings,
+  onStatusChange,
   children,
 }: {
   lines: DocLine[];
   scenes: SceneAnchor[];
   findings: Finding[];
+  onStatusChange?: (findingId: string, status: FindingStatus) => void;
   children: ReactNode;
 }) {
   const [mode, setMode] = useState<ViewMode>("review");
@@ -133,12 +135,13 @@ export function ScreenplayReaderProvider({
     });
   }, []);
 
-  const setStatus = useCallback(function setStatus(
-    findingId: string,
-    status: FindingStatus,
-  ) {
-    setStatuses((previous) => ({ ...previous, [findingId]: status }));
-  }, []);
+  const setStatus = useCallback(
+    function setStatus(findingId: string, status: FindingStatus) {
+      setStatuses((previous) => ({ ...previous, [findingId]: status }));
+      onStatusChange?.(findingId, status);
+    },
+    [onStatusChange],
+  );
 
   const value = useMemo<ReaderContextValue>(
     () => ({

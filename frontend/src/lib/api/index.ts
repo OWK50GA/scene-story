@@ -205,3 +205,198 @@ export async function patchFindingStatus(
 ): Promise<void> {
   await apiPatch(`/projects/${projectId}/findings/${findingId}`, { status });
 }
+
+// =============================================================================
+// Read models — scenes, claims, findings, companion ask
+// =============================================================================
+
+export type ApiScene = {
+  sceneId: string;
+  sceneNumber: number;
+  heading: string;
+  rawText: string;
+  ingestionStatus: "pending" | "complete" | "failed";
+};
+
+export type ApiClaim = {
+  claimId: string;
+  entityId: string;
+  entity: string;
+  property: string;
+  value: string;
+  scene: number;
+  sourceType: "explicit" | "implied" | "inferred";
+  confidence: number;
+  sourceLine: string;
+};
+
+export type ApiEmbeddedClaim = Omit<ApiClaim, "entity" | "entityId"> & {
+  claimId: string;
+};
+
+export type ApiFinding = {
+  findingId: string;
+  conflict: "confirmed" | "ambiguous";
+  severity: "high" | "medium" | "low";
+  scope: "within_unit" | "cross_unit";
+  status: "open" | "marked_intentional" | "resolved";
+  explanation: string;
+  resolutionSuggestion: string;
+  claimA: ApiEmbeddedClaim;
+  claimB: ApiEmbeddedClaim;
+};
+
+export type ApiAskAnswer = {
+  answer: string;
+  epistemicState: "known" | "partial" | "unknown";
+  factsUsed: string[];
+  notKnownAspects: string[];
+  boundary: { storyUnitId: string; upToScene: number };
+  boundaryEnforced: boolean;
+};
+
+type RawScene = {
+  scene_id: string;
+  story_unit_id: string;
+  scene_number: number;
+  heading: string;
+  raw_text: string;
+  ingestion_status: "pending" | "complete" | "failed";
+};
+
+type RawClaim = {
+  claim_id: string;
+  universe_entity_id: string;
+  entity_name: string;
+  source_scene_number: number;
+  property: string;
+  value: string;
+  source_type: "explicit" | "implied" | "inferred";
+  confidence: number;
+  source_line: string;
+};
+
+type RawEmbeddedClaim = {
+  claim_id: string;
+  universe_entity_id: string;
+  source_scene_number: number;
+  property: string;
+  value: string;
+  source_type: "explicit" | "implied" | "inferred";
+  confidence: number;
+  source_line: string;
+};
+
+type RawFinding = {
+  finding_id: string;
+  conflict_type: "confirmed" | "ambiguous";
+  severity: "high" | "medium" | "low";
+  scope: "within_unit" | "cross_unit";
+  status: "open" | "marked_intentional" | "resolved";
+  explanation: string;
+  resolution_suggestion: string;
+  claim_a: RawEmbeddedClaim;
+  claim_b: RawEmbeddedClaim;
+};
+
+function toApiScene(raw: RawScene): ApiScene {
+  return {
+    sceneId: raw.scene_id,
+    sceneNumber: raw.scene_number,
+    heading: raw.heading,
+    rawText: raw.raw_text,
+    ingestionStatus: raw.ingestion_status,
+  };
+}
+
+function toApiClaim(raw: RawClaim): ApiClaim {
+  return {
+    claimId: raw.claim_id,
+    entityId: raw.universe_entity_id,
+    entity: raw.entity_name,
+    property: raw.property,
+    value: raw.value,
+    scene: raw.source_scene_number,
+    sourceType: raw.source_type,
+    confidence: raw.confidence,
+    sourceLine: raw.source_line,
+  };
+}
+
+function toEmbeddedClaim(raw: RawEmbeddedClaim): ApiEmbeddedClaim {
+  return {
+    claimId: raw.claim_id,
+    property: raw.property,
+    value: raw.value,
+    scene: raw.source_scene_number,
+    sourceType: raw.source_type,
+    confidence: raw.confidence,
+    sourceLine: raw.source_line,
+  };
+}
+
+function toApiFinding(raw: RawFinding): ApiFinding {
+  return {
+    findingId: raw.finding_id,
+    conflict: raw.conflict_type,
+    severity: raw.severity,
+    scope: raw.scope,
+    status: raw.status,
+    explanation: raw.explanation,
+    resolutionSuggestion: raw.resolution_suggestion,
+    claimA: toEmbeddedClaim(raw.claim_a),
+    claimB: toEmbeddedClaim(raw.claim_b),
+  };
+}
+
+export async function getUnitScenes(storyUnitId: string): Promise<ApiScene[]> {
+  const raw = await apiGet<{ scenes: RawScene[] }>(
+    `/units/${storyUnitId}/scenes`,
+  );
+  return payload<{ scenes: RawScene[] }>(raw).scenes.map(toApiScene);
+}
+
+export async function getUnitClaims(storyUnitId: string): Promise<ApiClaim[]> {
+  const raw = await apiGet<{ claims: RawClaim[] }>(
+    `/units/${storyUnitId}/claims`,
+  );
+  return payload<{ claims: RawClaim[] }>(raw).claims.map(toApiClaim);
+}
+
+export async function getProjectFindings(
+  projectId: string,
+): Promise<ApiFinding[]> {
+  const raw = await apiGet<{ findings: RawFinding[] }>(
+    `/projects/${projectId}/findings`,
+  );
+  return payload<{ findings: RawFinding[] }>(raw).findings.map(toApiFinding);
+}
+
+export async function askUnit(
+  storyUnitId: string,
+  upToScene: number,
+  question: string,
+): Promise<ApiAskAnswer> {
+  const raw = await apiPost<{
+    answer: string;
+    epistemic_state: ApiAskAnswer["epistemicState"];
+    facts_used: string[];
+    not_known_aspects: string[];
+    boundary: { story_unit_id: string; up_to_scene: number };
+    boundary_enforced: boolean;
+  }>(`/units/${storyUnitId}/ask`, {
+    question,
+    up_to_scene: upToScene,
+  });
+  return {
+    answer: raw.answer,
+    epistemicState: raw.epistemic_state,
+    factsUsed: raw.facts_used ?? [],
+    notKnownAspects: raw.not_known_aspects ?? [],
+    boundary: {
+      storyUnitId: raw.boundary.story_unit_id,
+      upToScene: raw.boundary.up_to_scene,
+    },
+    boundaryEnforced: raw.boundary_enforced,
+  };
+}
