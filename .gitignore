@@ -6,3 +6,6 @@ dist
 # Prompt iteration outputs — timestamped, not committed
 backend/scripts/output/
 *.secret.json
+
+# Internal creds
+*acccount.json
