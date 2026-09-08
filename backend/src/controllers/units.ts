@@ -21,6 +21,7 @@ import {
 import { z } from "zod";
 import { GuardianSummary } from "../agents/director/orchestration.js";
 import { director } from "../agents/director/agent.js";
+import { companionAgent } from "../agents/audience-companion/agent.js";
 import { parseScreenplay, ParseError } from "../parser/index.js";
 import { handleError } from "../lib/handle-error.js";
 
@@ -528,6 +529,59 @@ export async function getClaimsForUnitHttp(req: Request, res: Response) {
         claims: claims.map(serialiseClaim),
         claim_count: claims.length,
       },
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// POST /units/:id/ask
+// ---------------------------------------------------------------------------
+
+const AskStoryUnitBodySchema = z.object({
+  question: z.string().min(1, "question must not be empty"),
+  up_to_scene: z.number().int().nonnegative(),
+});
+
+export async function askStoryUnitHttp(req: Request, res: Response) {
+  const parsedParam = StoryUnitParamSchema.safeParse(req.params);
+  if (!parsedParam.success) {
+    const issue = parsedParam.error.issues[0];
+    return res.status(400).json({
+      error: `${String(issue?.path[0])}: ${issue?.message}`,
+      code: "validation.invalid_param",
+    });
+  }
+
+  const parsedBody = AskStoryUnitBodySchema.safeParse(req.body);
+  if (!parsedBody.success) {
+    const issue = parsedBody.error.issues[0];
+    return res.status(400).json({
+      error: `${String(issue?.path[0])}: ${issue?.message}`,
+      code: "validation.invalid_body",
+    });
+  }
+
+  const { id: storyUnitId } = parsedParam.data;
+  const { question, up_to_scene: upToScene } = parsedBody.data;
+
+  try {
+    // Verify the unit exists before calling the Companion.
+    await getStoryUnit(storyUnitId);
+
+    const answer = await companionAgent.askUnit(storyUnitId, upToScene, question);
+
+    return res.status(200).json({
+      answer: answer.answer,
+      epistemic_state: answer.epistemicState,
+      facts_used: answer.factsUsed,
+      not_known_aspects: answer.notKnownAspects,
+      boundary: {
+        story_unit_id: storyUnitId,
+        up_to_scene: upToScene,
+      },
+      boundary_enforced: answer.boundaryEnforced,
     });
   } catch (err) {
     return handleError(err, res);

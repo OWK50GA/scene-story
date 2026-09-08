@@ -51,7 +51,7 @@ import { z } from "zod";
 // -----------------------------------------------------------------------------
 
 const gemini = new Gemini({
-  model: "gemini-2.0-flash",
+  model: "gemini-3.5-flash",
   apiKey: config.GEMINI_API_KEY,
 });
 

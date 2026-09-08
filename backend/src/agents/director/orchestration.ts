@@ -9,6 +9,7 @@ import {
 } from "../../mcp/clickhouse/operations.js";
 import { processScene } from "../story-analyst/agent.js";
 import { guardianAgent } from "../continuity-guardian/agent.js";
+import { companionAgent } from "../audience-companion/agent.js";
 import { log } from "../../observability/logger.js";
 import {
   recordSceneIngestionDuration,
@@ -61,6 +62,7 @@ export type GuardianSummary = {
 
 export type CompanionAnswer = {
   answer: string;
+  factsUsed: string[];
   claimsUsed: Array<{
     entityName: string;
     property: string;
@@ -347,30 +349,16 @@ export async function runCrossUnitGuardian(
  * runCompanionQuery
  *
  * Delegates a viewer question to the Audience Companion.
- *
- * STUB — Task 12 wires the real Companion here.
  */
 export async function runCompanionQuery(
   universeId: string,
   question: string,
   boundary: SpoilerBoundaryEntry[],
 ): Promise<CompanionAnswer> {
-  // TODO: Task 12 — replace with Companion sub-agent call:
-  //   const result = await companionAgent.ask(universeId, question, boundary);
-  //   return result;
-  log({
-    agent: "director",
-    universeId,
-    eventType: "companion_stub",
-    status: "success",
-    detail: {
-      question,
-      boundaryUnits: boundary.length,
-      note: "Companion not yet implemented — Task 12",
-    },
-  });
+  const result = await companionAgent.ask(universeId, question, boundary);
   return {
-    answer: "The Audience Companion is not yet available.",
+    answer: result.answer,
+    factsUsed: result.factsUsed,
     claimsUsed: [],
     boundaryEnforced: true,
     boundarySummary: boundary
