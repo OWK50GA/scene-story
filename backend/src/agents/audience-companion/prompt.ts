@@ -868,7 +868,7 @@ For "what should I remember," select facts that are genuinely load-bearing.
 
 # 19. FACT ID INTEGRITY
 
-The context pack contains stable fact IDs such as \`F1\`, \`F2\`, \`F3\`.
+The context pack contains stable fact IDs. These are opaque strings — copy them verbatim from the fact table. Do not shorten, modify, or invent them.
 
 You may only output IDs that appear in the supplied pack.
 
@@ -992,7 +992,7 @@ The response must have exactly this shape:
 
 {
 "answer": "string",
-"factsUsed": ["F1", "F2"],
+"factsUsed": ["<fact-id-from-pack>", "<fact-id-from-pack>"],
 "epistemicState": "known",
 "notKnownAspects": [],
 "boundary": {

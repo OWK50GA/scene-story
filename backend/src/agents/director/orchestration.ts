@@ -62,6 +62,7 @@ export type GuardianSummary = {
 
 export type CompanionAnswer = {
   answer: string;
+  factsUsed: string[];
   claimsUsed: Array<{
     entityName: string;
     property: string;
@@ -355,16 +356,10 @@ export async function runCompanionQuery(
   boundary: SpoilerBoundaryEntry[],
 ): Promise<CompanionAnswer> {
   const result = await companionAgent.ask(universeId, question, boundary);
-  // Map CompanionAnswer to the orchestration layer's CompanionAnswer shape.
   return {
     answer: result.answer,
-    claimsUsed: result.factsUsed.map((id) => ({
-      entityName: "",
-      property: "",
-      value: id,
-      sourceUnitTitle: "",
-      sceneNumber: 0,
-    })),
+    factsUsed: result.factsUsed,
+    claimsUsed: [],
     boundaryEnforced: true,
     boundarySummary: boundary
       .map((b) => `${b.storyUnitId} up to scene ${b.upToScene}`)

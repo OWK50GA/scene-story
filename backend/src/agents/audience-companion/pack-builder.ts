@@ -17,6 +17,7 @@ import {
   getEventsForEntities,
   getEntitiesForUniverse,
   getScenesForUnit,
+  getStoryUnit,
 } from "../../mcp/clickhouse/operations.js";
 import type { SpoilerBoundaryEntry } from "../../types/index.js";
 import type {
@@ -50,12 +51,17 @@ export async function buildPack(
 ): Promise<CompanionPack> {
   const boundary: SpoilerBoundaryEntry[] = [{ storyUnitId, upToScene }];
 
+  // Resolve universeId once here so all helpers can pass it to getCompanionFacts.
+  // getCompanionFacts filters by universe_id in SQL; an empty string returns nothing.
+  const unit = await getStoryUnit(storyUnitId);
+  const universeId = unit.universeId;
+
   // Entity summaries and scene digests are assembled for every mode.
   // They run in parallel with the mode-specific fact builder.
   const [entitySummaries, sceneDigests, facts] = await Promise.all([
-    buildEntitySummaries(storyUnitId, upToScene),
-    buildSceneDigests(storyUnitId, upToScene),
-    buildFacts(storyUnitId, upToScene, question, mode),
+    buildEntitySummaries(storyUnitId, upToScene, universeId),
+    buildSceneDigests(storyUnitId, upToScene, universeId),
+    buildFacts(storyUnitId, upToScene, question, mode, universeId),
   ]);
 
   return { boundary, entitySummaries, sceneDigests, facts, mode };
@@ -70,14 +76,15 @@ async function buildFacts(
   upToScene: number,
   question: string,
   mode: QuestionMode,
+  universeId: string,
 ): Promise<PackFact[]> {
   switch (mode) {
     case "current_state":
-      return buildCurrentStateFacts(storyUnitId, upToScene);
+      return buildCurrentStateFacts(storyUnitId, upToScene, universeId);
     case "historical":
-      return buildHistoricalFacts(storyUnitId, upToScene, question);
+      return buildHistoricalFacts(storyUnitId, upToScene, question, universeId);
     case "summary":
-      return buildSummaryFacts(storyUnitId, upToScene);
+      return buildSummaryFacts(storyUnitId, upToScene, universeId);
   }
 }
 
@@ -98,23 +105,17 @@ async function buildFacts(
  *
  * All PackFacts produced here have isHistorical: false.
  *
- * Note: getCompanionFacts takes a universeId parameter that isn't available
- * at the unit level. The unit-level boundary query is intentionally permissive
- * on universeId — the spoiler boundary (storyUnitId + upToScene) is the
- * binding constraint. We pass an empty string to satisfy the parameter; the
- * SQL's boundary filter carries the actual enforcement.
- *
- * UPDATE: getCompanionFacts returns entity_name but not entity_id or claim_id,
- * so factId here is a synthetic key: "<entityName>:<property>@<sceneNumber>".
+ * factId is a synthetic stable key: "<entityName>:<property>@<sceneNumber>".
  * For current_state mode this is stable (one fact per entity+property after dedup).
  * Historical and summary modes use claim_id directly via getHistoricalClaimsForEntities.
  */
 export async function buildCurrentStateFacts(
   storyUnitId: string,
   upToScene: number,
+  universeId: string,
 ): Promise<PackFact[]> {
   const boundary: SpoilerBoundaryEntry[] = [{ storyUnitId, upToScene }];
-  const rows = await getCompanionFacts("", boundary);
+  const rows = await getCompanionFacts(universeId, boundary);
 
   // Dedup: iterate in order (already sorted by valid_from_scene asc).
   // Last write wins → latest value per entity+property.
@@ -174,9 +175,10 @@ export async function buildHistoricalFacts(
   storyUnitId: string,
   upToScene: number,
   question: string,
+  universeId: string,
 ): Promise<PackFact[]> {
   // Step 1 — resolve entity summaries to match against the question.
-  const allSummaries = await buildEntitySummaries(storyUnitId, upToScene);
+  const allSummaries = await buildEntitySummaries(storyUnitId, upToScene, universeId);
   const resolvedEntities = resolveEntitiesFromQuestion(question, allSummaries);
   const resolvedIds = resolvedEntities.map((e) => e.entityId);
 
@@ -262,8 +264,9 @@ export async function buildHistoricalFacts(
 export async function buildSummaryFacts(
   storyUnitId: string,
   upToScene: number,
+  universeId: string,
 ): Promise<PackFact[]> {
-  const allSummaries = await buildEntitySummaries(storyUnitId, upToScene);
+  const allSummaries = await buildEntitySummaries(storyUnitId, upToScene, universeId);
   const allIds = allSummaries.map((e) => e.entityId);
 
   const [claims, events] = await Promise.all([
@@ -316,46 +319,36 @@ export async function buildSummaryFacts(
  *   1. Orientation layer in the Gemini user turn (entity list before facts)
  *   2. Input to resolveEntitiesFromQuestion for historical mode entity matching
  *
- * aliases: in v1, parsed from the entity's description field by extracting
- * quoted strings or comma-separated names mentioned in the first sentence.
- * Defaults to [canonicalName] when no aliases can be parsed.
- *
- * firstSeenScene: lowest source_scene_number among the entity's claims within
- * the boundary. Requires a claim fetch; we reuse the data already fetched for
- * current-state mode when available. Here we do a lightweight fetch via
- * getEntitiesForUniverse + getHistoricalClaimsForEntities.
- *
- * NOTE: storyUnitId → universeId requires a join we don't have at this layer.
- * We work around this by fetching entities scoped to the story unit via
- * getHistoricalClaimsForEntities with a large upToScene and deriving the
- * entity list from the claim rows, rather than from getEntitiesForUniverse
- * which requires universeId.
+ * Strategy:
+ *   - getCompanionFacts returns all claim rows within the boundary, including
+ *     entity names and first-seen scene numbers.
+ *   - getEntitiesForUniverse returns the full entity records (with entityId and
+ *     entityType) for the universe.
+ *   - We join on canonicalName to populate real entityId and entityType.
+ *   - aliases: parsed from canonicalName in v1 (proper alias column deferred).
  */
 export async function buildEntitySummaries(
   storyUnitId: string,
   upToScene: number,
+  universeId: string,
 ): Promise<EntitySummary[]> {
-  // Fetch all claims within boundary — this gives us entity IDs, names, types,
-  // and first-seen scenes without a separate entity lookup.
-  // We use a sentinel "all entities" approach: start with an empty list and
-  // fall back to the fact that getHistoricalClaimsForEntities with a broad
-  // entity list is not available without entity IDs first.
-  //
-  // Solution: use getCompanionFacts (which handles its own entity join) to get
-  // the set of entity names appearing in the boundary, then build summaries
-  // from that data. This avoids the universeId dependency.
   const boundary: SpoilerBoundaryEntry[] = [{ storyUnitId, upToScene }];
-  const rows = await getCompanionFacts("", boundary);
+
+  // Fetch claim rows and all universe entities in parallel.
+  const [rows, allEntities] = await Promise.all([
+    getCompanionFacts(universeId, boundary),
+    getEntitiesForUniverse(universeId),
+  ]);
 
   if (rows.length === 0) return [];
 
-  // Derive entity summaries from claim rows.
-  // firstSeenScene = min(sourceSceneNumber) per entity.
-  const entityMap = new Map<
-    string, // entityName as key (canonical)
-    { firstSeen: number }
-  >();
+  // Build a name→entity lookup for O(1) join.
+  const entityByName = new Map(
+    allEntities.map((e) => [e.canonicalName.toLowerCase(), e]),
+  );
 
+  // Derive first-seen scene per entity name from claim rows.
+  const entityMap = new Map<string, { firstSeen: number }>();
   for (const row of rows) {
     const existing = entityMap.get(row.entityName);
     if (!existing) {
@@ -365,13 +358,16 @@ export async function buildEntitySummaries(
     }
   }
 
-  return [...entityMap.entries()].map(([name, meta]) => ({
-    entityId: "",            // not available from getCompanionFacts
-    canonicalName: name,
-    entityType: "character" as const, // not available without entity join; placeholder
-    firstSeenScene: meta.firstSeen,
-    aliases: parseAliases(name),
-  }));
+  return [...entityMap.entries()].map(([name, meta]) => {
+    const entity = entityByName.get(name.toLowerCase());
+    return {
+      entityId: entity?.entityId ?? "",
+      canonicalName: name,
+      entityType: entity?.entityType ?? "character",
+      firstSeenScene: meta.firstSeen,
+      aliases: parseAliases(name),
+    };
+  });
 }
 
 /**
@@ -397,11 +393,12 @@ export async function buildEntitySummaries(
 export async function buildSceneDigests(
   storyUnitId: string,
   upToScene: number,
+  universeId: string,
 ): Promise<SceneDigest[]> {
   // Fetch scene headings and current-state facts in parallel.
   const [scenes, boundaryFacts] = await Promise.all([
     getScenesForUnit(storyUnitId),
-    getCompanionFacts("", [{ storyUnitId, upToScene }]),
+    getCompanionFacts(universeId, [{ storyUnitId, upToScene }]),
   ]);
 
   // Filter to scenes within the boundary (scene 0 is preamble, excluded).

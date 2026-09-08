@@ -130,6 +130,7 @@ function serialiseGuardianSummary(s: GuardianSummary) {
 function serialiseCompanionAnswer(a: CompanionAnswer) {
   return {
     answer: a.answer,
+    facts_used: a.factsUsed,
     claims_used: a.claimsUsed.map((c) => ({
       entity_name: c.entityName,
       property: c.property,
