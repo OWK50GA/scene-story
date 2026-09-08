@@ -245,23 +245,26 @@ export function guardFactsUsed(
 
   // Downgrade epistemic state if we had to strip IDs — Gemini cited something
   // outside the pack, which means its answer may be partially unsupported.
-  const epistemicState =
-    strippedIds.length > 0 && raw.epistemicState === "known"
-      ? "partial"
-      : raw.epistemicState;
+  let epistemicState = raw.epistemicState;
+
+  if (strippedIds.length > 0 && epistemicState === 'known') {
+    epistemicState = 'partial';
+  }
+
+  const factsUsed = epistemicState === 'unknown' ? [] : guardedFactsUsed;
 
   const notKnownAspects =
     strippedIds.length > 0
       ? [
           ...raw.notKnownAspects,
-          `${strippedIds.length} fact reference(s) were outside the boundary and have been removed.`,
+          `${strippedIds.length} unsupported fact reference(s) were removed because they were not present in the retrieved story memory.`,
         ]
       : raw.notKnownAspects;
 
   return {
     answer: raw.answer,
     epistemicState,
-    factsUsed: guardedFactsUsed,
+    factsUsed,
     notKnownAspects,
     boundary: pack.boundary,
     boundaryEnforced: true,

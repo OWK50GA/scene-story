@@ -90,6 +90,10 @@ export const HISTORICAL_TRIGGERS: readonly string[] = [
  * 1, 4, and most of 5: entity lookup, current-state questions, relationship
  * questions that don't require causal chains.
  */
+// Single-word triggers that must match as whole words to avoid false positives
+// (e.g. "how" inside "show", "why" inside "whereby").
+const WORD_BOUNDARY_TRIGGERS = new Set(["how", "why"]);
+
 export function classifyQuestion(question: string): QuestionMode {
   const normalised = question.toLowerCase().trim();
 
@@ -100,7 +104,10 @@ export function classifyQuestion(question: string): QuestionMode {
   }
 
   for (const trigger of HISTORICAL_TRIGGERS) {
-    if (normalised.includes(trigger)) {
+    const matches = WORD_BOUNDARY_TRIGGERS.has(trigger)
+      ? new RegExp(`\\b${trigger}\\b`).test(normalised)
+      : normalised.includes(trigger);
+    if (matches) {
       return "historical";
     }
   }

@@ -119,19 +119,7 @@ export async function buildCurrentStateFacts(
 
   // Dedup: iterate in order (already sorted by valid_from_scene asc).
   // Last write wins → latest value per entity+property.
-  const dedup = new Map<
-    string,
-    {
-      entityName: string;
-      property: string;
-      value: string;
-      validFromScene: number;
-      sourceSceneNumber: number;
-      inUniversePeriod: string;
-      confidence: number;
-      sourceUnitTitle: string;
-    }
-  >();
+  const dedup = new Map<string, typeof rows[number]>();
 
   for (const row of rows) {
     const key = `${row.entityName}::${row.property}`;
@@ -139,16 +127,15 @@ export async function buildCurrentStateFacts(
   }
 
   return [...dedup.values()].map((row) => ({
-    // Synthetic stable ID for current-state facts (no claim_id available).
-    factId: `${row.entityName}:${row.property}@${row.validFromScene}`,
-    entityId: "",          // not available from getCompanionFacts — empty for current_state
+    factId: row.claimId,
+    entityId: row.entityId,
     entityName: row.entityName,
     property: row.property,
     value: row.value,
-    sourceType: "explicit" as const, // getCompanionFacts doesn't return source_type; default
+    sourceType: row.sourceType as PackFact["sourceType"],
     confidence: row.confidence,
     sceneNumber: row.validFromScene,
-    sourceLine: "",        // not returned by getCompanionFacts; answerer omits it from prompt
+    sourceLine: row.sourceLine,
     isHistorical: false,
   }));
 }
@@ -225,7 +212,7 @@ export async function buildHistoricalFacts(
     return true;
   });
 
-  return dedupedClaims.map((c) => ({
+  const claimFacts: PackFact[] = dedupedClaims.map((c) => ({
     factId: c.claimId,
     entityId: c.universeEntityId,
     entityName: c.entityName,
@@ -235,10 +222,37 @@ export async function buildHistoricalFacts(
     confidence: c.confidence,
     sceneNumber: c.validFromScene,
     sourceLine: c.sourceLine,
-    // Mark superseded claims as historical so Gemini can reason about
-    // causal chains rather than treating old values as contradictions.
     isHistorical: c.supersededByCanon || c.validToScene !== null,
   }));
+
+  // Also include the events themselves as citable facts — Gemini needs them
+  // to reconstruct causal chains, not just to find hop entities.
+  // Merge direct events + any events involving hop entities.
+  const allEventIds = new Set(directEvents.map((e) => e.eventId));
+  const hopEvents =
+    hopIds.size > 0
+      ? await getEventsForEntities(storyUnitId, [...hopIds], upToScene)
+      : [];
+
+  const allEvents = [
+    ...directEvents,
+    ...hopEvents.filter((e) => !allEventIds.has(e.eventId)),
+  ];
+
+  const eventFacts: PackFact[] = allEvents.map((ev) => ({
+    factId: ev.eventId,
+    entityId: ev.subjectEntityId,
+    entityName: ev.subjectName,
+    property: "event",
+    value: ev.description,
+    sourceType: "explicit" as const,
+    confidence: 1.0,
+    sceneNumber: ev.sceneNumber,
+    sourceLine: "",
+    isHistorical: false,
+  }));
+
+  return [...claimFacts, ...eventFacts];
 }
 
 // =============================================================================
@@ -342,17 +356,17 @@ export async function buildEntitySummaries(
 
   if (rows.length === 0) return [];
 
-  // Build a name→entity lookup for O(1) join.
+  // Build a name→entity lookup for O(1) join (entityType only — entityId comes from the row).
   const entityByName = new Map(
     allEntities.map((e) => [e.canonicalName.toLowerCase(), e]),
   );
 
-  // Derive first-seen scene per entity name from claim rows.
-  const entityMap = new Map<string, { firstSeen: number }>();
+  // Derive first-seen scene per entity from claim rows.
+  const entityMap = new Map<string, { entityId: string; firstSeen: number }>();
   for (const row of rows) {
     const existing = entityMap.get(row.entityName);
     if (!existing) {
-      entityMap.set(row.entityName, { firstSeen: row.sourceSceneNumber });
+      entityMap.set(row.entityName, { entityId: row.entityId, firstSeen: row.sourceSceneNumber });
     } else if (row.sourceSceneNumber < existing.firstSeen) {
       existing.firstSeen = row.sourceSceneNumber;
     }
@@ -361,7 +375,7 @@ export async function buildEntitySummaries(
   return [...entityMap.entries()].map(([name, meta]) => {
     const entity = entityByName.get(name.toLowerCase());
     return {
-      entityId: entity?.entityId ?? "",
+      entityId: meta.entityId,
       canonicalName: name,
       entityType: entity?.entityType ?? "character",
       firstSeenScene: meta.firstSeen,

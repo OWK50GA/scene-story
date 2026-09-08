@@ -23,6 +23,7 @@ import { buildPack } from "./pack-builder.js";
 import { answerQuestion } from "./answerer.js";
 import type { CompanionAnswer } from "./types.js";
 import type { SpoilerBoundaryEntry } from "../../types/index.js";
+import { getStoryUnit } from "../../mcp/clickhouse/operations.js";
 import { log } from "../../observability/logger.js";
 import {
   recordCompanionQueryDuration,
@@ -113,16 +114,30 @@ class AudienceCompanionAgent {
 
     const start = Date.now();
 
-    // v1: use the first boundary entry.
+    // Validate that the first boundary entry belongs to the requested universe
+    // before building the pack. buildPack resolves universeId from getStoryUnit
+    // internally, but a mismatch would silently return zero facts rather than
+    // an explicit error.
     const first = boundary[0]!;
+    const firstUnit = await getStoryUnit(first.storyUnitId);
+    if (firstUnit.universeId !== universeId) {
+      return {
+        answer: `Story unit ${first.storyUnitId} does not belong to universe ${universeId}.`,
+        epistemicState: "unknown",
+        factsUsed: [],
+        notKnownAspects: [
+          `The story unit in the boundary belongs to universe ${firstUnit.universeId}, not ${universeId}.`,
+        ],
+        boundary,
+        boundaryEnforced: true,
+      };
+    }
+
+    // v1: use the first boundary entry.
     const mode = classifyQuestion(question);
     const pack = await buildPack(first.storyUnitId, first.upToScene, question, mode);
 
-    // Replace the single-entry boundary with the full multi-unit boundary so
-    // the answer reflects what was actually requested.
-    const packWithFullBoundary = { ...pack, boundary };
-
-    const answer = await answerQuestion(packWithFullBoundary, question);
+    const answer = await answerQuestion(pack, question);
 
     const durationMs = Date.now() - start;
 

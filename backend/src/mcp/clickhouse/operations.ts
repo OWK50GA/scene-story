@@ -1140,6 +1140,8 @@ export async function getCompanionFacts(
   boundary: SpoilerBoundaryEntry[],
 ): Promise<
   Array<{
+    claimId: string;
+    entityId: string;
     entityName: string;
     property: string;
     value: string;
@@ -1147,6 +1149,8 @@ export async function getCompanionFacts(
     sourceSceneNumber: number;
     inUniversePeriod: string;
     confidence: number;
+    sourceType: string;
+    sourceLine: string;
     sourceUnitTitle: string;
   }>
 > {
@@ -1185,6 +1189,8 @@ export async function getCompanionFacts(
     query,
     { universe_id: universeId },
     (r) => ({
+      claimId: r.claim_id as string,
+      entityId: r.entity_id as string,
       entityName: r.entity_name as string,
       property: r.property as string,
       value: r.value as string,
@@ -1192,6 +1198,8 @@ export async function getCompanionFacts(
       sourceSceneNumber: Number(r.source_scene_number),
       inUniversePeriod: r.in_universe_period as string,
       confidence: Number(r.confidence),
+      sourceType: r.source_type as string,
+      sourceLine: r.source_line as string,
       sourceUnitTitle: r.source_unit_title as string,
     }),
   );

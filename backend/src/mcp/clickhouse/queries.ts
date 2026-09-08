@@ -483,14 +483,18 @@ export const Q = {
   // dynamically by the operations layer and injected as a pre-validated string.
   SELECT_COMPANION_FACTS_BASE: `
     SELECT
-      e.canonical_name    AS entity_name,
+      c.claim_id,
+      c.universe_entity_id        AS entity_id,
+      e.canonical_name            AS entity_name,
       c.property,
       c.value,
       c.valid_from_scene,
       c.source_scene_number,
       c.in_universe_period,
       c.confidence,
-      su.title            AS source_unit_title
+      c.source_type,
+      c.source_line,
+      su.title                    AS source_unit_title
     FROM lmm.claims c
     JOIN lmm.universe_entities e  ON c.universe_entity_id = e.entity_id
     JOIN lmm.story_units su       ON c.story_unit_id = su.story_unit_id

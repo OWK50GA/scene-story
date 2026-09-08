@@ -120,7 +120,12 @@ first-class response states. The system prompt dedicates a section to this.
 ### 9. Evidence
 Every answer populates `factsUsed` with the IDs of the specific facts from the
 pack that support each statement. The frontend can use these IDs to link back to
-the source screenplay line (`sourceLine` field on each `PackFact`).
+the source screenplay line via the `sourceLine` field on each `PackFact`.
+
+Note: `sourceLine` and `sourceType` are populated for historical and summary
+mode facts (which use `claim_id` as `factId`). Current-state mode facts also
+carry these fields now that `getCompanionFacts` returns them directly from the
+claims table.
 
 The `factsUsed ⊆ pack fact IDs` constraint is enforced deterministically in
 `answerer.ts` after Gemini returns. Gemini cannot reference a fact outside the
@@ -403,6 +408,7 @@ POST /api/units/:id/ask
         │
         ▼
   pack-builder.buildPack(storyUnitId, upToScene, question, mode)
+        → resolves universeId via getStoryUnit(storyUnitId)
         → CompanionPack
         │
    ┌────┴─────────────────────────────────┐
