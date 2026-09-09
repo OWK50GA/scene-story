@@ -4,7 +4,7 @@ const options: Options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Living Movie Memory API",
+      title: "SceneStory API",
       version: "1.0.0",
       description:
         "A live story-state engine for structured screenplay ingestion, " +
@@ -16,7 +16,7 @@ const options: Options = {
         description: "Local development",
       },
       {
-        url: `https://${process.env.PRODUCTION_HOST ?? "api.livingmoviememory.com"}/api`,
+        url: `https://scenestory-api-305177902833.europe-west2.run.app/api`,
         description: "Production",
       },
     ],
