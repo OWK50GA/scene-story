@@ -624,7 +624,10 @@ export async function fixFindingHttp(req: Request, res: Response) {
     const unit = await getStoryUnit(parsed.data.id);
     const finding = await getFinding(parsed.data.findingId);
 
-    if (finding.storyUnitIdA !== unit.storyUnitId) {
+    const involvesUnit =
+      finding.storyUnitIdA === unit.storyUnitId ||
+      finding.storyUnitIdB === unit.storyUnitId;
+    if (!involvesUnit) {
       return res.status(404).json({
         status: "error",
         message: `Finding ${parsed.data.findingId} not found for this unit`,
@@ -637,10 +640,13 @@ export async function fixFindingHttp(req: Request, res: Response) {
       getClaim(finding.claimBId),
     ]);
 
-    const sceneNumber =
-      claimB.sourceSceneNumber !== claimA.sourceSceneNumber
-        ? claimB.sourceSceneNumber
-        : claimA.sourceSceneNumber;
+    // Revise the scene that belongs to the requested unit. For within-unit
+    // findings this is claim B; for cross-unit findings it is whichever side
+    // lives in this unit, so the target scene always exists here.
+    const claimBInUnit = finding.storyUnitIdB === unit.storyUnitId;
+    const targetClaim = claimBInUnit ? claimB : claimA;
+
+    const sceneNumber = targetClaim.sourceSceneNumber;
 
     const scenes = await getScenesForUnit(unit.storyUnitId);
     const scene = scenes.find((s) => s.sceneNumber === sceneNumber);
