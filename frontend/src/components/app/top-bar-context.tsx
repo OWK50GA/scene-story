@@ -10,7 +10,7 @@ function useContextLabel(): string {
     return "Ingest";
   }
   if (pathname.startsWith("/viewer")) return "Audience Companion";
-  return "Living Movie Memory";
+  return "SceneStory";
 }
 
 export function TopBarContext() {
@@ -21,7 +21,7 @@ export function TopBarContext() {
         {label}
       </span>
       <span className="hidden text-sm font-semibold text-foreground sm:block">
-        Living Movie Memory
+        SceneStory
       </span>
     </div>
   );

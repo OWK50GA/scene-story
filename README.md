@@ -1,20 +1,20 @@
-# Scene Story — Living Movie Memory
+# SceneStory
 
 A structured, queryable story-state engine built on top of a screenplay. It catches continuity errors before they reach production, and answers audience questions without spoiling what they haven't seen yet.
 
-Hackathon submission for **Google Cloud Agentic Cinema** — deadline September 9, 2026.
+Hackathon submission for **Google Cloud Agentic Cinema**, deadline September 9, 2026.
 
 ---
 
 ## What It Does
 
-Upload a screenplay. The system reads every scene and builds a live record of who is in the story, what objects exist, where things are, and how all of that changes from scene to scene. Every extracted fact is stored as a **claim** — a typed, sourced, time-bounded assertion about the world of the story.
+Upload a screenplay. The system reads every scene and builds a live record of who is in the story, what objects exist, where things are, and how all of that changes from scene to scene. Every extracted fact is stored as a **claim**: a typed, sourced, time-bounded assertion about the world of the story.
 
 On top of that record, two things become possible:
 
-**Continuity Guardian** — checks the story for internal contradictions. A prop that vanishes without explanation. A character who left the city but is somehow home two scenes later. The system finds these, cites exactly where each conflicting claim was established, and distinguishes genuine errors from intentional story beats.
+**Continuity Guardian**: checks the story for internal contradictions. A prop that vanishes without explanation. A character who left the city but is somehow home two scenes later. The system finds these, cites exactly where each conflicting claim was established, and distinguishes genuine errors from intentional story beats.
 
-**Audience Companion** — answers viewer questions using only the information from scenes they have already watched. Ask about a character, an object, a plot point. If the answer hasn't been established yet in the story, the system says so rather than spoiling what comes next.
+**Audience Companion**: answers viewer questions using only the information from scenes they have already watched. Ask about a character, an object, a plot point. If the answer hasn't been established yet in the story, the system says so rather than spoiling what comes next.
 
 ---
 
@@ -44,13 +44,13 @@ ClickHouse    Grafana
 
 ### The Agents
 
-**Director Agent** — the coordinator. Receives every request from the API, routes it to the right specialist, and assembles the response. When something goes wrong in the pipeline, it queries Grafana via MCP to investigate and decides whether to retry or flag for review. Built with Google Cloud ADK.
+**Director Agent**: the coordinator. Receives every request from the API, routes it to the right specialist, and assembles the response. When something goes wrong in the pipeline, it queries Grafana via MCP to investigate and decides whether to retry or flag for review. Built with Google Cloud ADK.
 
-**Story Analyst Agent** — the reader. Takes one scene at a time and extracts structured claims from it using Gemini. Writes entities, events, and state changes to ClickHouse. Runs once per scene during ingestion. Has no awareness of other scenes — extraction is intentionally isolated.
+**Story Analyst Agent**: the reader. Takes one scene at a time and extracts structured claims from it using Gemini. Writes entities, events, and state changes to ClickHouse. Runs once per scene during ingestion. Has no awareness of other scenes: extraction is intentionally isolated.
 
-**Continuity Guardian Agent** — the investigator. After ingestion, queries ClickHouse for all cases where two active claims share the same entity and property but have different values. Asks Gemini to reason about whether the gap is a genuine contradiction, a normal transition, or an ambiguous case. Writes findings to ClickHouse. Does not modify existing claims.
+**Continuity Guardian Agent**: the investigator. After ingestion, queries ClickHouse for all cases where two active claims share the same entity and property but have different values. Asks Gemini to reason about whether the gap is a genuine contradiction, a normal transition, or an ambiguous case. Writes findings to ClickHouse. Does not modify existing claims.
 
-**Audience Companion Agent** — the guide. Takes a viewer question and a scene number. Before any reasoning, constructs a hard boundary: only claims where `valid_from_scene ≤ viewer's current scene`. Queries ClickHouse with that filter, passes the retrieved facts to Gemini, and answers from within the boundary only. If the answer hasn't been established yet, it says so.
+**Audience Companion Agent**: the guide. Takes a viewer question and a scene number. Before any reasoning, constructs a hard boundary: only claims where `valid_from_scene ≤ viewer's current scene`. Queries ClickHouse with that filter, passes the retrieved facts to Gemini, and answers from within the boundary only. If the answer hasn't been established yet, it says so.
 
 ---
 
@@ -73,13 +73,13 @@ Agents access ClickHouse through a thin MCP wrapper that exposes domain-specific
 
 ## Data Model
 
-**`projects`** — one row per uploaded screenplay. Tracks ingestion status.
+**`projects`**: one row per uploaded screenplay. Tracks ingestion status.
 
-**`scenes`** — one row per scene. Stores the raw text, a summary, the location, and scene number.
+**`scenes`**: one row per scene. Stores the raw text, a summary, the location, and scene number.
 
-**`entities`** — one row per named character, object, or location in the story.
+**`entities`**: one row per named character, object, or location in the story.
 
-**`claims`** — the core of the system. One row per fact established in the story.
+**`claims`**: the core of the system. One row per fact established in the story.
 
 | Field | Description |
 |---|---|
@@ -91,9 +91,9 @@ Agents access ClickHouse through a thin MCP wrapper that exposes domain-specific
 | `source_type` | `explicit` / `implied` / `inferred` |
 | `confidence` | 1.0 for explicit, 0.85 for implied, ≤0.6 for inferred |
 
-**`events`** — one row per story event. Subject, action, object. Events are what explain transitions between conflicting claims — if an event bridges two claims, it is not a contradiction.
+**`events`**: one row per story event. Subject, action, object. Events are what explain transitions between conflicting claims: if an event bridges two claims, it is not a contradiction.
 
-**`continuity_findings`** — one row per contradiction or potential issue. Records the two conflicting claims, conflict type (`confirmed` / `potential` / `ambiguous`), severity, explanation, resolution suggestion, and status.
+**`continuity_findings`**: one row per contradiction or potential issue. Records the two conflicting claims, conflict type (`confirmed` / `potential` / `ambiguous`), severity, explanation, resolution suggestion, and status.
 
 ---
 
