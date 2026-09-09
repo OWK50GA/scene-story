@@ -46,16 +46,16 @@ export type QuestionMode = "current_state" | "historical" | "summary";
  * about causal chains rather than treating old values as contradictions.
  */
 export type PackFact = {
-  factId: string;         // = claim_id from ClickHouse
+  factId: string; // = claim_id from ClickHouse
   entityId: string;
   entityName: string;
   property: string;
   value: string;
   sourceType: "explicit" | "implied" | "inferred";
   confidence: number;
-  sceneNumber: number;    // valid_from_scene — when this became true
-  sourceLine: string;     // raw screenplay line the claim was extracted from
-  isHistorical: boolean;  // true for superseded claims in historical/summary mode
+  sceneNumber: number; // valid_from_scene — when this became true
+  sourceLine: string; // raw screenplay line the claim was extracted from
+  isHistorical: boolean; // true for superseded claims in historical/summary mode
 };
 
 /**
@@ -66,7 +66,7 @@ export type PackFact = {
 export type SceneDigest = {
   sceneNumber: number;
   heading: string;
-  oneLiner: string;  // 1–3 sentences: events first, significant state changes second
+  oneLiner: string; // 1–3 sentences: events first, significant state changes second
 };
 
 /**
@@ -81,8 +81,8 @@ export type EntitySummary = {
   entityId: string;
   canonicalName: string;
   entityType: "character" | "object" | "location" | "faction" | "concept";
-  firstSeenScene: number;  // lowest source_scene_number in the boundary
-  aliases: string[];       // v1: parsed from description; defaults to [canonicalName]
+  firstSeenScene: number; // lowest source_scene_number in the boundary
+  aliases: string[]; // v1: parsed from description; defaults to [canonicalName]
 };
 
 /**
@@ -135,8 +135,8 @@ export type EpistemicState = "known" | "partial" | "unknown";
 export type CompanionAnswer = {
   answer: string;
   epistemicState: EpistemicState;
-  factsUsed: string[];         // subset of pack.facts.map(f => f.factId)
-  notKnownAspects: string[];   // empty when epistemicState is "known" or "unknown"
+  factsUsed: string[]; // subset of pack.facts.map(f => f.factId)
+  notKnownAspects: string[]; // empty when epistemicState is "known" or "unknown"
   boundary: SpoilerBoundaryEntry[];
   boundaryEnforced: true;
 };

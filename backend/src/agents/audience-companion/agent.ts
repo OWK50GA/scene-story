@@ -69,7 +69,7 @@ class AudienceCompanionAgent {
 
     log({
       agent: "companion",
-      universeId: "",       // not available at unit level without an extra lookup
+      universeId: "", // not available at unit level without an extra lookup
       storyUnitId,
       eventType: "companion_query",
       durationMs,
@@ -135,7 +135,12 @@ class AudienceCompanionAgent {
 
     // v1: use the first boundary entry.
     const mode = classifyQuestion(question);
-    const pack = await buildPack(first.storyUnitId, first.upToScene, question, mode);
+    const pack = await buildPack(
+      first.storyUnitId,
+      first.upToScene,
+      question,
+      mode,
+    );
 
     const answer = await answerQuestion(pack, question);
 

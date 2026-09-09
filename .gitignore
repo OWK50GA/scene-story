@@ -9,3 +9,4 @@ backend/scripts/output/
 
 # Internal creds
 *account.json
+.venv

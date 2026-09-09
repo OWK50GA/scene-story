@@ -26,11 +26,12 @@
  */
 
 import {
-  findCrossUnitConflicts,
   writeFinding,
   markClaimSupersededByCanon,
   getStoryUnit,
 } from "../../mcp/clickhouse/operations.js";
+import { runQuery } from "../../mcp/clickhouse/http-client.js";
+import type { CrossUnitConflictRow } from "../../mcp/clickhouse/operations.js";
 import { log } from "../../observability/logger.js";
 import {
   recordGuardianDuration,
@@ -58,10 +59,81 @@ export async function runCrossUnitPass(
 ): Promise<GuardianSummary> {
   const passStart = Date.now();
 
-  // ── Fetch all cross-unit conflict candidates ──────────────────────────────
-  let candidates;
+  // ── Fetch all cross-unit conflict candidates via official mcp-clickhouse ──
+  //
+  // This query goes through the official ClickHouse MCP server — the Guardian
+  // retrieves its cross-unit story-memory conflicts through the MCP layer
+  // before reasoning over them with Gemini.
+  let candidates: CrossUnitConflictRow[];
   try {
-    candidates = await findCrossUnitConflicts(universeId);
+    const rows = await runQuery<{
+      claim_a_id: string;
+      claim_b_id: string;
+      universe_entity_id: string;
+      property: string;
+      value_a: string;
+      value_b: string;
+      unit_a_id: string;
+      unit_b_id: string;
+      date_a: string | number | null;
+      date_b: string | number | null;
+      period_a: string;
+      period_b: string;
+      tier_a: string | number;
+      tier_b: string | number;
+      confidence_a: string | number;
+      confidence_b: string | number;
+    }>(
+      `SELECT
+         a.claim_id                AS claim_a_id,
+         b.claim_id                AS claim_b_id,
+         a.universe_entity_id,
+         a.property,
+         a.value                   AS value_a,
+         b.value                   AS value_b,
+         a.story_unit_id           AS unit_a_id,
+         b.story_unit_id           AS unit_b_id,
+         a.in_universe_date_start  AS date_a,
+         b.in_universe_date_start  AS date_b,
+         a.in_universe_period      AS period_a,
+         b.in_universe_period      AS period_b,
+         a.canon_tier              AS tier_a,
+         b.canon_tier              AS tier_b,
+         a.confidence              AS confidence_a,
+         b.confidence              AS confidence_b
+       FROM lmm.claims a
+       JOIN lmm.claims b
+         ON  a.universe_entity_id = b.universe_entity_id
+         AND a.property           = b.property
+         AND a.story_unit_id      != b.story_unit_id
+         AND a.claim_id           < b.claim_id
+         AND a.value              != b.value
+       WHERE a.universe_id        = '${universeId}'
+         AND a.valid_to_scene     IS NULL
+         AND b.valid_to_scene     IS NULL
+         AND a.superseded_by_canon = 0
+         AND b.superseded_by_canon = 0
+       ORDER BY a.in_universe_date_start NULLS LAST`,
+    );
+    // Coerce ClickHouse string numbers to JS numbers
+    candidates = rows.map((r) => ({
+      claimAId: r.claim_a_id,
+      claimBId: r.claim_b_id,
+      universeEntityId: r.universe_entity_id,
+      property: r.property,
+      valueA: r.value_a,
+      valueB: r.value_b,
+      unitAId: r.unit_a_id,
+      unitBId: r.unit_b_id,
+      dateA: r.date_a !== null ? Number(r.date_a) : null,
+      dateB: r.date_b !== null ? Number(r.date_b) : null,
+      periodA: r.period_a,
+      periodB: r.period_b,
+      tierA: Number(r.tier_a),
+      tierB: Number(r.tier_b),
+      confidenceA: Number(r.confidence_a),
+      confidenceB: Number(r.confidence_b),
+    }));
   } catch (err) {
     log({
       agent: "guardian",

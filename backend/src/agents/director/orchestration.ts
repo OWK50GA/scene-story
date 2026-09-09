@@ -278,6 +278,11 @@ export async function runIngestionPipeline(
   // ── Automatic Guardian passes ─────────────────────────────────────────────
   // Within-unit always runs, even if some scenes failed — partial analysis is
   // better than none.
+  //
+  // Brief pause before Guardian queries — ClickHouse Cloud uses ReplicatedMergeTree
+  // and writes from ingestion need a moment to be visible to JOIN queries.
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+
   const withinUnitResult = await runWithinUnitGuardian(storyUnitId);
   const crossUnitResult = await runCrossUnitGuardian(unit.universeId);
 

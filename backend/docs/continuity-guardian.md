@@ -15,12 +15,14 @@ determine whether the extracted state history is **internally coherent** — whe
 the world can move from one established state to another without contradiction.
 
 The Guardian is not:
+
 - a claim comparator (are these two strings different?)
 - a story summariser
 - a creative writer
 - a scanner that searches for problems on its own
 
 The Guardian is:
+
 - an investigator that receives a bounded evidence package
 - a judge that reasons over that package and returns a verdict
 
@@ -79,8 +81,8 @@ makes the unexplained transfer a more serious violation, not a benign omission.
 That context lives in claims and events across the same entity — not in a pair.
 
 **The deeper problem:** Continuity isn't a property of two claims. It's a property
-of a state trajectory. The pair is where a problem is *detected*, not where it
-should be *reasoned about*. Collapsing the reasoning to the detection unit loses
+of a state trajectory. The pair is where a problem is _detected_, not where it
+should be _reasoned about_. Collapsing the reasoning to the detection unit loses
 most of the available evidence.
 
 Additional failure modes:
@@ -109,7 +111,7 @@ and can reason freely.
 **Why it was rejected:**
 
 1. A full feature film extracts 500+ claims. That is expensive and noisy.
-2. The structured extraction *is* the compression. The Story Analyst's job was to
+2. The structured extraction _is_ the compression. The Story Analyst's job was to
    convert natural language into a tractable structured form. Bypassing that by
    feeding raw text to the Guardian undoes that work entirely.
 3. ClickHouse is the memory substrate. Its job is candidate discovery and context
@@ -214,11 +216,11 @@ downgrade is applied in code, not by Gemini, so it is deterministic.
 
 ### Write rules
 
-| Verdict | `update_claim_valid_to` | `write_finding` |
-|---|---|---|
-| `normal_transition` | yes — earlier claim gets `valid_to_scene = sceneB` | no |
-| `confirmed` | yes | yes |
-| `ambiguous` | yes | yes |
+| Verdict             | `update_claim_valid_to`                            | `write_finding` |
+| ------------------- | -------------------------------------------------- | --------------- |
+| `normal_transition` | yes — earlier claim gets `valid_to_scene = sceneB` | no              |
+| `confirmed`         | yes                                                | yes             |
+| `ambiguous`         | yes                                                | yes             |
 
 The Guardian never creates claims, deletes claims, or modifies any field other
 than `valid_to_scene` and `superseded_by_canon`.

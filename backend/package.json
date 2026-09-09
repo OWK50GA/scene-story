@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "@clickhouse/client": "^1.23.1",
+    "@google-cloud/storage": "^8.1.0",
     "@google/adk": "^2.0.0",
     "@google/genai": "^2.19.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
