@@ -5,13 +5,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ScreenplayViewer } from "@/components/views/screenplay-viewer";
 import {
+  getProjectEntityNames,
   getProjectFindings,
-  getUnitClaims,
   getUnitScenes,
   listStoryUnits,
   patchFindingStatus,
 } from "@/lib/api";
-import { entityNameIndex, findingToDomain } from "@/lib/api/domain-adapters";
+import { findingToDomain } from "@/lib/api/domain-adapters";
 import type { FindingStatus } from "@/lib/domain";
 import { parseScreenplay } from "@/lib/screenplay";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -33,10 +33,10 @@ export function ScreenplayScreen() {
     enabled: Boolean(storyUnitId),
   });
 
-  const claimsQuery = useQuery({
-    queryKey: ["unit-claims", storyUnitId],
-    queryFn: () => getUnitClaims(storyUnitId as string),
-    enabled: Boolean(storyUnitId),
+  const namesQuery = useQuery({
+    queryKey: ["project-entity-names", projectId],
+    queryFn: () => getProjectEntityNames(projectId as string),
+    enabled: Boolean(projectId),
   });
 
   const findingsQuery = useQuery({
@@ -76,7 +76,7 @@ export function ScreenplayScreen() {
 
   const scenes = scenesQuery.data ?? [];
   const loading =
-    scenesQuery.isLoading || claimsQuery.isLoading || findingsQuery.isLoading;
+    scenesQuery.isLoading || namesQuery.isLoading || findingsQuery.isLoading;
 
   const unit =
     unitsQuery.data?.find((u) => u.storyUnitId === storyUnitId)?.title ??
@@ -93,7 +93,7 @@ export function ScreenplayScreen() {
     .join("\n\n");
   const { lines, scenes: anchors } = parseScreenplay(docText);
 
-  const names = entityNameIndex(claimsQuery.data ?? []);
+  const names = namesQuery.data ?? new Map<string, string>();
   const findings = (findingsQuery.data ?? []).map((f) =>
     findingToDomain(f, names),
   );

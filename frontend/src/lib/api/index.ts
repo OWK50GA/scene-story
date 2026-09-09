@@ -76,6 +76,12 @@ type RawStoryUnit = {
   claim_count: number;
 };
 
+type RawIngestReceipt = {
+  story_unit_id: string;
+  scene_count: number;
+  ingestion_status: string;
+};
+
 type RawUnitStatus = {
   story_unit_id: string;
   ingestion_status: IngestionStatus;
@@ -181,11 +187,11 @@ export async function ingestStoryUnit(
 ): Promise<IngestReceipt> {
   const form = new FormData();
   form.append("file", file);
-  const raw = await apiPostForm<IngestReceipt>(
+  const raw = await apiPostForm<RawIngestReceipt>(
     `/units/${storyUnitId}/ingest`,
     form,
   );
-  return payload(raw);
+  return toIngestReceipt(payload<RawIngestReceipt>(raw));
 }
 
 function toUnitStatus(raw: RawUnitStatus): UnitStatus {
@@ -195,6 +201,14 @@ function toUnitStatus(raw: RawUnitStatus): UnitStatus {
     sceneCount: raw.scene_count,
     claimCount: raw.claim_count,
     failedScenes: raw.failed_scenes,
+  };
+}
+
+function toIngestReceipt(raw: RawIngestReceipt): IngestReceipt {
+  return {
+    storyUnitId: raw.story_unit_id,
+    sceneCount: raw.scene_count,
+    ingestionStatus: raw.ingestion_status,
   };
 }
 
@@ -230,8 +244,15 @@ export type ApiClaim = {
   sourceLine: string;
 };
 
-export type ApiEmbeddedClaim = Omit<ApiClaim, "entity" | "entityId"> & {
+export type ApiEmbeddedClaim = {
   claimId: string;
+  entityId: string;
+  property: string;
+  value: string;
+  scene: number;
+  sourceType: "explicit" | "implied" | "inferred";
+  confidence: number;
+  sourceLine: string;
 };
 
 export type ApiFinding = {
@@ -326,6 +347,7 @@ function toApiClaim(raw: RawClaim): ApiClaim {
 function toEmbeddedClaim(raw: RawEmbeddedClaim): ApiEmbeddedClaim {
   return {
     claimId: raw.claim_id,
+    entityId: raw.universe_entity_id,
     property: raw.property,
     value: raw.value,
     scene: raw.source_scene_number,
@@ -370,6 +392,32 @@ export async function getProjectFindings(
     `/projects/${projectId}/findings`,
   );
   return payload<{ findings: RawFinding[] }>(raw).findings.map(toApiFinding);
+}
+
+/**
+ * Builds an entityId to canonical entity name map across every story unit in
+ * a project, so findings that span units can still resolve claim names.
+ */
+export async function getProjectEntityNames(
+  projectId: string,
+): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  const units = await listStoryUnits(projectId);
+  await Promise.all(
+    units.map(async (unit) => {
+      try {
+        const claims = await getUnitClaims(unit.storyUnitId);
+        for (const claim of claims) {
+          if (!names.has(claim.entityId)) {
+            names.set(claim.entityId, claim.entity);
+          }
+        }
+      } catch {
+        // ignore a unit that cannot be read; resolve what we can
+      }
+    }),
+  );
+  return names;
 }
 
 export async function askUnit(

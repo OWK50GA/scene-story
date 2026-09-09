@@ -7,6 +7,9 @@ export const dynamic = "force-dynamic";
 
 const backendUrl = process.env.BACKEND_URL ?? "http://localhost:3001";
 
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(request: Request) {
   let storyUnitId: string | undefined;
   try {
@@ -15,12 +18,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: "Invalid JSON body" }, { status: 400 });
   }
 
-  if (!storyUnitId) {
+  if (!storyUnitId || !UUID_RE.test(storyUnitId)) {
     return NextResponse.json(
-      { message: "storyUnitId is required" },
+      { message: "storyUnitId must be a valid UUID" },
       { status: 400 },
     );
   }
+
+  const encodedUnitId = encodeURIComponent(storyUnitId);
 
   let fileBuffer: Buffer;
   try {
@@ -47,7 +52,7 @@ export async function POST(request: Request) {
 
   try {
     const response = await fetch(
-      `${backendUrl}/api/units/${storyUnitId}/ingest`,
+      `${backendUrl}/api/units/${encodedUnitId}/ingest`,
       { method: "POST", body: form },
     );
     const json = (await response.json()) as Record<string, unknown>;

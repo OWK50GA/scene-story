@@ -52,9 +52,17 @@ export function ScreenplayReaderProvider({
   const [mode, setMode] = useState<ViewMode>("review");
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [hidden, setHidden] = useState<Set<FindingConflict>>(new Set());
-  const [statuses, setStatuses] = useState<Record<string, FindingStatus>>(
-    Object.fromEntries(findings.map((finding) => [finding.id, finding.status])),
-  );
+  const [overrides, setOverrides] = useState<Record<string, FindingStatus>>({});
+
+  const statusSignature = findings
+    .map((finding) => `${finding.id}:${finding.status}`)
+    .join("|");
+  const [seenSignature, setSeenSignature] = useState(statusSignature);
+
+  if (seenSignature !== statusSignature) {
+    setSeenSignature(statusSignature);
+    setOverrides({});
+  }
 
   const annotations = useMemo(
     () => buildAnnotations(lines, scenes, findings),
@@ -101,11 +109,11 @@ export function ScreenplayReaderProvider({
       ambiguous: 0,
     };
     for (const finding of findings) {
-      const status = statuses[finding.id] ?? finding.status;
+      const status = overrides[finding.id] ?? finding.status;
       if (status === "open") counts[finding.conflict] += 1;
     }
     return counts;
-  }, [findings, statuses]);
+  }, [findings, overrides]);
 
   const selectAnnotation = useCallback(function selectAnnotation(
     annotation: TextAnnotation | null,
@@ -135,9 +143,19 @@ export function ScreenplayReaderProvider({
     });
   }, []);
 
+  const statusOf = useCallback(
+    function statusOf(findingId: string): FindingStatus {
+      const override = overrides[findingId];
+      if (override) return override;
+      const finding = findings.find((f) => f.id === findingId);
+      return finding?.status ?? "open";
+    },
+    [overrides, findings],
+  );
+
   const setStatus = useCallback(
     function setStatus(findingId: string, status: FindingStatus) {
-      setStatuses((previous) => ({ ...previous, [findingId]: status }));
+      setOverrides((previous) => ({ ...previous, [findingId]: status }));
       onStatusChange?.(findingId, status);
     },
     [onStatusChange],
@@ -156,16 +174,14 @@ export function ScreenplayReaderProvider({
         byLine
           .get(lineIndex)
           ?.find(
-            (a) =>
-              !hidden.has(a.conflict) &&
-              (statuses[a.findingId] ?? "open") === "open",
+            (a) => !hidden.has(a.conflict) && statusOf(a.findingId) === "open",
           ),
       hidden,
       toggleConflict,
       selected,
       selectedFinding,
       selectAnnotation,
-      statusOf: (findingId) => statuses[findingId] ?? "open",
+      statusOf,
       setStatus,
       findingCounts,
     }),
@@ -180,10 +196,10 @@ export function ScreenplayReaderProvider({
       hidden,
       selected,
       selectedFinding,
-      statuses,
       findingCounts,
       selectAnnotation,
       toggleConflict,
+      statusOf,
       setStatus,
     ],
   );

@@ -5,6 +5,7 @@ import {
   type ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -37,6 +38,7 @@ function readStored(): Workspace {
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<Workspace>({});
+  const firstPersist = useRef(true);
 
   useEffect(() => {
     const stored = readStored();
@@ -44,6 +46,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    if (firstPersist.current) {
+      firstPersist.current = false;
+      return;
+    }
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(workspace));
   }, [workspace]);
 

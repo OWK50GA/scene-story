@@ -2,7 +2,11 @@ import type { ApiClaim, ApiFinding } from "@/lib/api";
 import type { Claim, Finding } from "@/lib/domain";
 
 export function entityNameIndex(claims: ApiClaim[]): Map<string, string> {
-  return new Map(claims.map((c) => [c.claimId, c.entity]));
+  const names = new Map<string, string>();
+  for (const claim of claims) {
+    if (!names.has(claim.entityId)) names.set(claim.entityId, claim.entity);
+  }
+  return names;
 }
 
 export function claimToDomain(api: ApiClaim): Claim {
@@ -24,8 +28,8 @@ export function findingToDomain(
   names: Map<string, string>,
 ): Finding {
   const entity =
-    names.get(api.claimB.claimId) ??
-    names.get(api.claimA.claimId) ??
+    names.get(api.claimA.entityId) ??
+    names.get(api.claimB.entityId) ??
     "Unknown entity";
   const property = api.claimA.property || api.claimB.property;
 

@@ -59,6 +59,9 @@ export function ViewerScreen() {
   const [asking, setAsking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const maxSceneBound = Math.max(1, maxScene);
+  const boundedScene = Math.min(Math.max(1, scene), maxSceneBound);
+
   if (!storyUnitId) {
     return (
       <Card>
@@ -83,7 +86,7 @@ export function ViewerScreen() {
     setAsking(true);
     setError(null);
     try {
-      const result = await askUnit(unitId, scene, q);
+      const result = await askUnit(unitId, boundedScene, q);
       setAnswer(result);
     } catch (err) {
       setAnswer(null);
@@ -111,23 +114,25 @@ export function ViewerScreen() {
               </CardDescription>
             </div>
             <Badge className="bg-accent font-medium text-accent-foreground">
-              Scene {scene} of {maxScene}
+              Scene {boundedScene} of {maxScene}
             </Badge>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="scene-slider">Spoiler boundary</Label>
               <span className="text-sm text-muted-foreground">
-                answer using scenes 1 to {scene} only
+                answer using scenes 1 to {boundedScene} only
               </span>
             </div>
             <Slider
               id="scene-slider"
               min={1}
-              max={Math.max(1, maxScene)}
+              max={maxSceneBound}
               step={1}
-              value={[scene]}
-              onValueChange={([value]) => setScene(value)}
+              value={[boundedScene]}
+              onValueChange={([value]) =>
+                setScene(Math.min(Math.max(1, value ?? 1), maxSceneBound))
+              }
               disabled={loading}
             />
           </div>
@@ -186,7 +191,7 @@ export function ViewerScreen() {
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <LockKeyhole className="h-3.5 w-3.5" aria-hidden />
                 <span>
-                  Asked: “{asked}” · boundary enforced at scene {scene}
+                  Asked: “{asked}” · boundary enforced at scene {boundedScene}
                 </span>
                 <Badge
                   variant="outline"

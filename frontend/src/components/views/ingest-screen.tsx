@@ -47,8 +47,15 @@ export function IngestScreen() {
     queryKey: ["unit-status", workspace.storyUnitId],
     queryFn: () => getUnitStatus(workspace.storyUnitId as string),
     enabled: Boolean(workspace.storyUnitId),
-    refetchInterval: (query) =>
-      query.state.data?.ingestionStatus === "ingesting" ? 4000 : false,
+    refetchInterval: (query) => {
+      const status = query.state.data?.ingestionStatus;
+      const active =
+        status === "ingesting" ||
+        (step.kind === "ingesting" &&
+          status !== "complete" &&
+          status !== "failed");
+      return active ? 4000 : false;
+    },
   });
 
   async function createDemoWorld() {
@@ -92,6 +99,7 @@ export function IngestScreen() {
         throw new Error(json.message ?? "Ingest failed to start");
       }
       setStep({ kind: "ingesting" });
+      statusQuery.refetch();
     } catch (err) {
       setStep({
         kind: "failed",
@@ -118,6 +126,7 @@ export function IngestScreen() {
           const json = (await response.json()) as { message?: string };
           if (!response.ok) throw new Error(json.message ?? "Ingest failed");
           setStep({ kind: "ingesting" });
+          statusQuery.refetch();
         })
         .catch((err: unknown) =>
           setStep({

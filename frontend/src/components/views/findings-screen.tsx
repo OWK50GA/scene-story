@@ -2,15 +2,16 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ChevronDown, CircleAlert, CircleCheck, CircleOff } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import {
+  getProjectEntityNames,
   getProjectFindings,
-  getUnitClaims,
   patchFindingStatus,
 } from "@/lib/api";
-import { entityNameIndex, findingToDomain } from "@/lib/api/domain-adapters";
+import { findingToDomain } from "@/lib/api/domain-adapters";
 import { CONFLICT_LABEL, type Finding, type FindingStatus } from "@/lib/domain";
 import { cn } from "@/lib/utils";
 import { useWorkspace } from "@/lib/workspace-context";
@@ -216,12 +217,12 @@ function FindingItem({
 export function FindingsScreen() {
   const { workspace } = useWorkspace();
   const queryClient = useQueryClient();
-  const { projectId, storyUnitId } = workspace;
+  const { projectId } = workspace;
 
-  const claimsQuery = useQuery({
-    queryKey: ["unit-claims", storyUnitId],
-    queryFn: () => getUnitClaims(storyUnitId as string),
-    enabled: Boolean(storyUnitId),
+  const namesQuery = useQuery({
+    queryKey: ["project-entity-names", projectId],
+    queryFn: () => getProjectEntityNames(projectId as string),
+    enabled: Boolean(projectId),
   });
 
   const findingsQuery = useQuery({
@@ -245,7 +246,21 @@ export function FindingsScreen() {
     },
   });
 
-  const names = entityNameIndex(claimsQuery.data ?? []);
+  if (!projectId) {
+    return (
+      <div className="flex flex-col items-center gap-2 border border-dashed border-border px-6 py-14 text-center">
+        <p className="text-sm font-medium">No story loaded</p>
+        <p className="text-sm text-muted-foreground">
+          Ingest a screenplay first.
+        </p>
+        <Button asChild variant="outline" className="mt-2">
+          <Link href="/creator/ingest">Go to Ingest</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const names = namesQuery.data ?? new Map<string, string>();
   const findings = (findingsQuery.data ?? []).map((f) =>
     findingToDomain(f, names),
   );
@@ -255,8 +270,7 @@ export function FindingsScreen() {
   }
 
   const openCount = findings.filter((f) => f.status === "open").length;
-  const loading =
-    !projectId || findingsQuery.isLoading || claimsQuery.isLoading;
+  const loading = namesQuery.isLoading || findingsQuery.isLoading;
 
   return (
     <div className="flex flex-col gap-4">
