@@ -1,0 +1,247 @@
+LOW WATER
+
+Written as a demo fixture for the Living Movie Memory system.
+Universe: The Tide House
+Project: The Tide House Stories (Canon Tier 1)
+Story Unit: Film D — "Low Water"
+In-Universe Period: Present Day, 2026
+In-Universe Date Start: 2026
+
+
+EXT. NORTH COAST — TIDE HOUSE — MORNING
+
+A weather-beaten house stands above a rocky shoreline. Grey water.
+Stacked stone.
+
+MAYA REED, 29, marine researcher, unloads equipment from a van. Her
+younger brother SAM, 24, carries a waterproof case.
+
+MAYA
+Careful with that.
+
+SAM
+It's empty.
+
+MAYA
+It wasn't empty yesterday.
+
+Sam opens it. Inside is a handheld SONAR UNIT — compact, ruggedized,
+battery-powered. The sonar unit is in Sam's possession.
+
+
+INT. TIDE HOUSE — KITCHEN — MORNING
+
+Maya spreads tide charts across the kitchen table. A marked location
+appears offshore: BLACK REEF.
+
+SAM
+You're still looking for it?
+
+MAYA
+The reef isn't the mystery.
+
+She points to another marking on the chart.
+
+MAYA (CONT'D)
+This is.
+
+A handwritten note reads: "Low tide reveals the entrance." Maya's
+research goal is finding the submerged chamber beneath Black Reef.
+The sonar unit's location is the kitchen table where Sam set it down.
+
+
+EXT. SHORELINE — AFTERNOON
+
+Maya and Sam walk the rocks at the inlet. Sam carries the sonar unit.
+The tide is beginning to fall. Maya switches the sonar on. The screen
+displays an unusual underwater structure below the inlet floor.
+
+MAYA
+There.
+
+SAM
+That's not natural.
+
+Sam is carrying the sonar unit on the shoreline at the inlet. The
+underwater structure's existence is now confirmed by sonar readings.
+
+
+INT. TIDE HOUSE — STUDY — NIGHT
+
+Maya examines an old CAPTAIN'S LOGBOOK found in the house. One entry
+describes a submerged stone chamber beneath Black Reef. Another entry
+mentions a BRASS COMPASS supposedly recovered from the chamber by a
+previous occupant. Maya searches a desk drawer. The compass is not
+there. The brass compass's location is unknown at this point.
+
+
+EXT. SHORELINE — NEXT MORNING
+
+Low tide. Maya and Sam return to the inlet. A narrow opening is
+visible beneath the rocks where the water has pulled back. Sam enters
+first. Maya follows. They are entering the submerged chamber together.
+
+
+INT. SUBMERGED CHAMBER — DAY
+
+Their lights reveal a stone chamber — old, hand-cut walls, a stone
+ledge. On the ledge sits the BRASS COMPASS. Maya carefully picks it up.
+
+MAYA
+This is the one from the logbook.
+
+Sam examines it.
+
+SAM
+Still works.
+
+Maya puts the compass inside her waterproof EQUIPMENT BAG. The brass
+compass's location is now Maya's equipment bag.
+
+
+INT. TIDE HOUSE — KITCHEN — EVENING
+
+Maya empties the equipment bag onto the kitchen table. The compass is
+there. She places it beside the logbook on the table. The brass
+compass's location is now the kitchen table beside the logbook.
+
+SAM
+We should photograph everything before we leave.
+
+MAYA
+Tomorrow.
+
+She closes the logbook.
+
+
+EXT. SHORELINE — NIGHT
+
+A storm approaches. Maya and Sam watch waves break against the rocks.
+Sam notices the sonar unit sitting on a dry stone ledge near the
+water's edge.
+
+SAM
+You left this outside?
+
+MAYA
+I thought you had it.
+
+They retrieve it. The sonar unit's location was the stone ledge on
+the shoreline. There is no recorded event establishing how it moved
+from inside the Tide House to the outside stone ledge. Maya and Sam
+both deny placing it there.
+
+
+INT. TIDE HOUSE — STUDY — MORNING
+
+Maya studies the logbook again. She discovers a loose page hidden
+inside the front cover. It reads: "The chamber cannot be reached at
+high tide. The entrance is visible only for approximately forty
+minutes at low water."
+
+Maya checks the tide chart.
+
+MAYA
+Forty minutes.
+
+SAM
+Then we'd better be quick.
+
+The logbook's loose page establishes the forty-minute access window
+as a confirmed constraint on chamber access.
+
+
+EXT. SHORELINE — LOW TIDE — AFTERNOON
+
+Low tide again. Maya and Sam return to the inlet. The entrance is
+visible. Maya carries the BRASS COMPASS. Sam carries the SONAR UNIT.
+They enter the chamber. The brass compass's location is Maya's
+possession as she enters the chamber.
+
+
+INT. SUBMERGED CHAMBER — AFTERNOON
+
+The chamber is darker than before. Maya shines her light across the
+stone ledge. The compass is not on the ledge. She checks her
+equipment bag. It is not there either.
+
+SAM
+Didn't you put it back here?
+
+MAYA
+No. I had it when we left this morning.
+
+Maya's equipment bag is empty. The brass compass is missing from her
+possession. No transfer event has been recorded for the compass
+between the kitchen table in Scene 7 and Maya's possession in
+Scene 10. There is no recorded event to explain its current absence.
+
+
+EXT. SHORELINE — EVENING
+
+They return toward the house. Sam carries the sonar unit. Maya carries
+the logbook. No compass.
+
+MAYA
+Let's check the kitchen.
+
+
+INT. TIDE HOUSE — KITCHEN — EVENING
+
+The brass compass sits on the counter beside the sink. Maya stares at it.
+
+SAM
+Did you put it here?
+
+MAYA
+No.
+
+She picks it up. The compass needle points toward the sea. The brass
+compass's location is the kitchen counter. No transfer event explains
+how it returned here from Maya's possession. Both Maya and Sam deny
+moving it.
+
+
+INT. TIDE HOUSE — STUDY — NIGHT
+
+Maya reads the loose page again. On its reverse is one more sentence:
+"The compass always returns to the house."
+
+MAYA
+(reading aloud)
+The compass always returns to the house.
+
+SAM
+You think that's literal?
+
+MAYA
+I don't know.
+
+She closes the logbook. The logbook explicitly establishes a rule
+about the brass compass: it returns to the house. This is a
+stated property of the compass within the story world, not an
+inference. It may explain the unexplained location transition.
+
+
+EXT. TIDE HOUSE — DAWN
+
+Storm has passed. Maya stands on the porch holding the compass. Sam
+joins her.
+
+SAM
+What happens now?
+
+MAYA
+We document everything.
+
+She looks toward Black Reef.
+
+MAYA (CONT'D)
+Then we come back at low tide.
+
+The brass compass's location is Maya's possession on the porch. The
+sonar unit's location is inside the Tide House.
+
+FADE OUT.
+
+LOW WATER — END

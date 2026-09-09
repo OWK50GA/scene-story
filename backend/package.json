@@ -10,7 +10,8 @@
     "dev": "tsx watch --watch src src/index.ts",
     "start": "node dist/index.js",
     "format": "prettier --write .",
-    "migrate": "tsx scripts/migrate.ts"
+    "migrate": "tsx scripts/migrate.ts",
+    "benchmark": "tsx scripts/benchmark-model.ts"
   },
   "keywords": [],
   "author": "",

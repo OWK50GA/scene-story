@@ -24,12 +24,13 @@ import {
 } from "../../types/index.js";
 import { STATIC_SYSTEM_PROMPT, buildDossierPrompt } from "./prompt.js";
 import type { EntityDossier } from "./dossier.js";
+import { GEMINI_MODEL } from "../../config/models.js";
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MODEL = "gemini-3.5-flash";
+const MODEL = GEMINI_MODEL;
 const TIMEOUT_MS = 30_000;
 const MAX_ATTEMPTS = 2;
 

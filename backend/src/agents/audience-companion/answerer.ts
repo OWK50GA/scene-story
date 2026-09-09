@@ -23,12 +23,13 @@ import {
   type RawGeminiAnswer,
 } from "./types.js";
 import { SYSTEM_PROMPT, buildUserTurn } from "./prompt.js";
+import { GEMINI_MODEL } from "../../config/models.js";
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MODEL = "gemini-3.5-flash";
+const MODEL = GEMINI_MODEL;
 const TIMEOUT_MS = 30_000;
 const MAX_ATTEMPTS = 2;
 

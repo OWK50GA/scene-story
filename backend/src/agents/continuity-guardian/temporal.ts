@@ -38,12 +38,13 @@ import {
 } from "../../mcp/clickhouse/operations.js";
 import { log } from "../../observability/logger.js";
 import type { TemporalRelationType } from "../../types/index.js";
+import { GEMINI_MODEL } from "../../config/models.js";
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-const MODEL = "gemini-3.5-flash";
+const MODEL = GEMINI_MODEL;
 const TIMEOUT_MS = 30_000;
 
 // The four values Gemini is allowed to return. Anything else is treated as

@@ -382,7 +382,7 @@ router.get("/:id/findings", getUniverseFindingsHttp);
  *             required:
  *               - name
  *               - type
- *               - canon_tier
+ *               - canonTier
  *             properties:
  *               name:
  *                 type: string
@@ -390,7 +390,7 @@ router.get("/:id/findings", getUniverseFindingsHttp);
  *               type:
  *                 type: string
  *                 enum: [film, series, crossover, other]
- *               canon_tier:
+ *               canonTier:
  *                 type: integer
  *                 enum: [1, 2, 3]
  *                 description: "1 = primary canon, 2 = secondary, 3 = non-canon"
