@@ -1,7 +1,10 @@
 "use client";
 
+import { Fragment } from "react";
+
 import { lineClass, SEVERITY_TONE } from "@/components/screenplay/presentation";
 import { useScreenplayReader } from "@/components/screenplay/reader-context";
+import { SceneFixPanel } from "@/components/screenplay/scene-fix-panel";
 import type { DocLine } from "@/lib/screenplay";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +47,8 @@ export function ScreenplayPaper({
   title: string;
   sceneCount: number;
 }) {
-  const { lines } = useScreenplayReader();
+  const { lines, fix } = useScreenplayReader();
+  const fixScene = fix.status === "idle" ? undefined : fix.scene;
 
   return (
     <div className="min-w-0">
@@ -60,15 +64,23 @@ export function ScreenplayPaper({
           className="scroll-stable max-h-[70vh] overflow-y-auto px-6 py-8 md:px-12"
         >
           <div className="mx-auto w-full max-w-[36rem] font-script text-[15px] leading-[1.5] md:text-base">
-            {lines.map((line) => (
-              <span
-                key={line.index}
-                id={`line-${line.index}`}
-                className="block"
-              >
-                <ScriptLine line={line} />
-              </span>
-            ))}
+            {lines.map((line, index) => {
+              const previous = lines[index - 1];
+              const isFirstOfScene =
+                previous === undefined || previous.scene !== line.scene;
+              const showFix =
+                fixScene !== undefined &&
+                isFirstOfScene &&
+                line.scene === fixScene;
+              return (
+                <Fragment key={line.index}>
+                  <span id={`line-${line.index}`} className="block">
+                    <ScriptLine line={line} />
+                  </span>
+                  {showFix ? <SceneFixPanel /> : null}
+                </Fragment>
+              );
+            })}
           </div>
         </div>
       </div>

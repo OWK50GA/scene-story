@@ -35,6 +35,12 @@ export type StoryUnit = {
   claimCount: number;
 };
 
+export type ProjectSummary = Project & {
+  universeName: string;
+  unitCount: number;
+  claimCount: number;
+};
+
 export type UnitStatus = {
   storyUnitId: string;
   ingestionStatus: IngestionStatus;
@@ -63,6 +69,12 @@ type RawProject = {
   type: Project["type"];
   canon_tier: Project["canonTier"];
   created_at: string;
+};
+
+type RawProjectSummary = RawProject & {
+  universe_name: string;
+  unit_count: number;
+  claim_count: number;
 };
 
 type RawStoryUnit = {
@@ -110,6 +122,15 @@ function toProject(raw: RawProject): Project {
   };
 }
 
+function toProjectSummary(raw: RawProjectSummary): ProjectSummary {
+  return {
+    ...toProject(raw),
+    universeName: raw.universe_name,
+    unitCount: raw.unit_count,
+    claimCount: raw.claim_count,
+  };
+}
+
 function toStoryUnit(raw: RawStoryUnit): StoryUnit {
   return {
     storyUnitId: raw.story_unit_id,
@@ -146,6 +167,18 @@ export async function createProject(
     canonTier: 1,
   });
   return toProject(payload<RawProject>(raw));
+}
+
+export async function listProjects(): Promise<ProjectSummary[]> {
+  const raw = await apiGet<{ projects: RawProjectSummary[] }>("/projects");
+  return payload<{ projects: RawProjectSummary[] }>(raw).projects.map(
+    toProjectSummary,
+  );
+}
+
+export async function getProject(projectId: string): Promise<ProjectSummary> {
+  const raw = await apiGet<RawProjectSummary>(`/projects/${projectId}`);
+  return toProjectSummary(payload<RawProjectSummary>(raw));
 }
 
 export async function createStoryUnit(

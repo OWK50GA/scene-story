@@ -2,6 +2,7 @@
 
 import {
   Clapperboard,
+  FolderKanban,
   type LucideIcon,
   MessageCircleQuestionMark,
 } from "lucide-react";
@@ -19,10 +20,10 @@ type NavItem = {
 
 const NAV: NavItem[] = [
   {
-    href: "/creator/ingest",
-    activePrefix: "/creator",
-    label: "Creator",
-    icon: Clapperboard,
+    href: "/projects",
+    activePrefix: "/projects",
+    label: "Projects",
+    icon: FolderKanban,
   },
   {
     href: "/viewer",
@@ -43,7 +44,7 @@ export function AppRail() {
   return (
     <aside className="flex w-[76px] shrink-0 flex-col items-center overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <Link
-        href="/creator/ingest"
+        href="/projects"
         aria-label="SceneStory home"
         className="mt-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
       >

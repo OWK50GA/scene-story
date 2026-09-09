@@ -8,6 +8,9 @@ import {
   getFinding,
   updateFindingStatus,
   getProject,
+  listProjects,
+  getProjectSummary,
+  type ProjectSummary,
 } from "../mcp/clickhouse/operations.js";
 import type {
   Claim,
@@ -55,6 +58,20 @@ function serialiseProject(p: Project) {
     type: p.type,
     canon_tier: p.canonTier,
     created_at: p.createdAt,
+  };
+}
+
+function serialiseProjectSummary(s: ProjectSummary) {
+  return {
+    project_id: s.projectId,
+    universe_id: s.universeId,
+    name: s.name,
+    type: s.type,
+    canon_tier: s.canonTier,
+    created_at: s.createdAt,
+    universe_name: s.universeName,
+    unit_count: s.unitCount,
+    claim_count: s.claimCount,
   };
 }
 
@@ -152,6 +169,42 @@ export async function createProjectHttp(req: Request, res: Response) {
     return res.status(201).json({
       status: "success",
       data: serialiseProject(project),
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
+}
+
+export async function getProjectHttp(req: Request, res: Response) {
+  const parsed = ProjectParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue?.path[0])}: ${issue?.message}`,
+    });
+  }
+
+  try {
+    const summary = await getProjectSummary(parsed.data.id);
+    return res.status(200).json({
+      status: "success",
+      data: serialiseProjectSummary(summary),
+    });
+  } catch (err) {
+    return handleError(err, res);
+  }
+}
+
+export async function listProjectsHttp(_req: Request, res: Response) {
+  try {
+    const projects = await listProjects();
+    return res.status(200).json({
+      status: "success",
+      data: {
+        projects: projects.map(serialiseProjectSummary),
+        project_count: projects.length,
+      },
     });
   } catch (err) {
     return handleError(err, res);

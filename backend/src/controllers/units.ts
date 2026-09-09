@@ -10,6 +10,8 @@ import {
   insertScene,
   getScenesForUnit,
   getClaimsForUnit,
+  getFinding,
+  getClaim,
 } from "../mcp/clickhouse/operations.js";
 import {
   ContinuityFinding,
@@ -24,6 +26,7 @@ import { director } from "../agents/director/agent.js";
 import { companionAgent } from "../agents/audience-companion/agent.js";
 import { parseScreenplay, ParseError } from "../parser/index.js";
 import { handleError } from "../lib/handle-error.js";
+import { streamSceneFix } from "../agents/story-analyst/fix-scene.js";
 
 // ---------------------------------------------------------------------------
 // Per-unit pipeline emitter registry
@@ -588,3 +591,120 @@ export async function askStoryUnitHttp(req: Request, res: Response) {
   }
 }
 
+
+const FixFindingParamSchema = z.object({
+  id: z.uuid(),
+  findingId: z.uuid(),
+});
+
+function writeSse(res: Response, payload: Record<string, unknown>) {
+  if (res.writableEnded) return;
+  res.write(`data: ${JSON.stringify(payload)}\n\n`);
+}
+
+/**
+ * POST /api/units/:id/findings/:findingId/fix
+ *
+ * Streams an AI-proposed rewrite of the scene that establishes the flagged
+ * contradiction. Preview only: nothing is persisted. The client reconciles
+ * the proposal against the current scene text and, later, the findings
+ * status lifecycle.
+ */
+export async function fixFindingHttp(req: Request, res: Response) {
+  const parsed = FixFindingParamSchema.safeParse(req.params);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    return res.status(400).json({
+      status: "error",
+      message: `${String(issue?.path[0])}: ${issue?.message}`,
+    });
+  }
+
+  try {
+    const unit = await getStoryUnit(parsed.data.id);
+    const finding = await getFinding(parsed.data.findingId);
+
+    const involvesUnit =
+      finding.storyUnitIdA === unit.storyUnitId ||
+      finding.storyUnitIdB === unit.storyUnitId;
+    if (!involvesUnit) {
+      return res.status(404).json({
+        status: "error",
+        message: `Finding ${parsed.data.findingId} not found for this unit`,
+        code: "finding.not_found",
+      });
+    }
+
+    const [claimA, claimB] = await Promise.all([
+      getClaim(finding.claimAId),
+      getClaim(finding.claimBId),
+    ]);
+
+    // Revise the scene that belongs to the requested unit. For within-unit
+    // findings this is claim B; for cross-unit findings it is whichever side
+    // lives in this unit, so the target scene always exists here.
+    const claimBInUnit = finding.storyUnitIdB === unit.storyUnitId;
+    const targetClaim = claimBInUnit ? claimB : claimA;
+
+    const sceneNumber = targetClaim.sourceSceneNumber;
+
+    const scenes = await getScenesForUnit(unit.storyUnitId);
+    const scene = scenes.find((s) => s.sceneNumber === sceneNumber);
+    if (!scene) {
+      return res.status(422).json({
+        status: "error",
+        message: `Scene ${sceneNumber} was not found for this unit`,
+        code: "fix.scene_not_found",
+      });
+    }
+
+    res.writeHead(200, {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    });
+
+    writeSse(res, {
+      type: "meta",
+      unit_id: unit.storyUnitId,
+      unit_title: unit.title,
+      finding_id: finding.findingId,
+      scene: sceneNumber,
+      claims: [
+        { scene: claimA.sourceSceneNumber, property: claimA.property, value: claimA.value },
+        { scene: claimB.sourceSceneNumber, property: claimB.property, value: claimB.value },
+      ],
+    });
+
+    let newText = "";
+    try {
+      for await (const delta of streamSceneFix({
+        unit,
+        finding,
+        claimA,
+        claimB,
+        sceneNumber,
+        heading: scene.heading,
+        rawText: scene.rawText,
+      })) {
+        if (res.writableEnded) break;
+        newText += delta;
+        writeSse(res, { type: "delta", text: delta });
+      }
+      writeSse(res, {
+        type: "done",
+        scene: sceneNumber,
+        oldText: scene.rawText,
+        newText,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      writeSse(res, { type: "error", message });
+    } finally {
+      res.end();
+    }
+  } catch (err) {
+    return handleError(err, res);
+  }
+}
