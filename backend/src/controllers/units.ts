@@ -26,6 +26,9 @@ import { director } from "../agents/director/agent.js";
 import { companionAgent } from "../agents/audience-companion/agent.js";
 import { parseScreenplay, ParseError } from "../parser/index.js";
 import { handleError } from "../lib/handle-error.js";
+import { uploadScreenplay } from "../lib/gcs.js";
+import { updateStoryUnitFileUrl } from "../mcp/clickhouse/operations.js";
+import { config } from "../config/index.js";
 import { streamSceneFix } from "../agents/story-analyst/fix-scene.js";
 
 // ---------------------------------------------------------------------------
@@ -85,6 +88,7 @@ function serialiseStoryUnit(s: StoryUnit) {
     ingestion_status: s.ingestionStatus,
     scene_count: s.sceneCount,
     claim_count: s.claimCount,
+    source_file_url: s.sourceFileUrl ?? null,
   };
 }
 
@@ -221,6 +225,20 @@ export async function ingestFileHttp(req: Request, res: Response) {
         "The uploaded file parsed successfully but contains no scene headings.",
       code: "parse.no_scenes_found",
     });
+  }
+
+  // Upload original screenplay to GCS for auditability and re-processing.
+  // Non-blocking — a GCS failure must never abort ingestion.
+  if (config.GCS_BUCKET) {
+    const ext = (file.originalname.toLowerCase().split(".").pop() ?? "txt");
+    uploadScreenplay(file.buffer, unit.universeId, storyUnitId, ext)
+      .then((url) => updateStoryUnitFileUrl(storyUnitId, url))
+      .catch((err: unknown) => {
+        console.error(
+          `[gcs] Failed to upload screenplay for unit ${storyUnitId}:`,
+          err instanceof Error ? err.message : String(err),
+        );
+      });
   }
 
   // Insert all scenes into ClickHouse.

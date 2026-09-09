@@ -42,6 +42,20 @@ async function run() {
     console.log(`✓ Table ${tableName} ready`);
   }
 
+  // 3. Apply incremental column additions to existing tables.
+  //    ALTER TABLE ... ADD COLUMN IF NOT EXISTS is safe on live tables.
+  const alterations = [
+    {
+      label: "lmm.story_units.source_file_url",
+      query: `ALTER TABLE ${dbName}.story_units ADD COLUMN IF NOT EXISTS source_file_url String DEFAULT ''`,
+    },
+  ];
+
+  for (const alt of alterations) {
+    await client.command({ query: alt.query });
+    console.log(`✓ Column ${alt.label} ready`);
+  }
+
   console.log("\nMigration complete. All tables are ready.");
   await client.close();
 }

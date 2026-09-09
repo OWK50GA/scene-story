@@ -25,6 +25,8 @@ export const configSchema = z.object({
 
   GRAFANA_MCP_TOKEN: z.string().optional(),
   GRAFANA_STACK_URL: z.string().optional(),
+
+  GCS_BUCKET: z.string().optional(),
 });
 
 export type Config = z.infer<typeof configSchema>;
