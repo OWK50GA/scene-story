@@ -1,0 +1,15 @@
+node_modules
+dist
+scripts/output
+.env
+.env.*
+!*.env.example
+service-account*.json
+service-acccount.json
+docs
+tests
+*.tsbuildinfo
+*.log
+.git
+Dockerfile
+.dockerignore
