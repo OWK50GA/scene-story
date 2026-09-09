@@ -71,6 +71,7 @@ function makeUnit(
     sceneCount: 14,
     claimCount: 50,
     canonTier: 1,
+    sourceFileUrl: null,
   };
 }
 
@@ -113,9 +114,8 @@ describe("resolveTemporalOrder — Branch 1 (precise dates)", () => {
   });
 
   it("does not call getTemporalRelation when both dates are available", async () => {
-    const { getTemporalRelation } = await import(
-      "../../mcp/clickhouse/operations.js"
-    );
+    const { getTemporalRelation } =
+      await import("../../mcp/clickhouse/operations.js");
 
     vi.mocked(getStoryUnit)
       .mockResolvedValueOnce(makeUnit("unit-a", 1943))
@@ -126,9 +126,8 @@ describe("resolveTemporalOrder — Branch 1 (precise dates)", () => {
   });
 
   it("does not call writeTemporalRelation when both dates are available", async () => {
-    const { writeTemporalRelation } = await import(
-      "../../mcp/clickhouse/operations.js"
-    );
+    const { writeTemporalRelation } =
+      await import("../../mcp/clickhouse/operations.js");
 
     vi.mocked(getStoryUnit)
       .mockResolvedValueOnce(makeUnit("unit-a", 1943))
@@ -139,9 +138,8 @@ describe("resolveTemporalOrder — Branch 1 (precise dates)", () => {
   });
 
   it("falls through to Branch 2 when unitA has no date", async () => {
-    const { getTemporalRelation } = await import(
-      "../../mcp/clickhouse/operations.js"
-    );
+    const { getTemporalRelation } =
+      await import("../../mcp/clickhouse/operations.js");
 
     vi.mocked(getStoryUnit)
       .mockResolvedValueOnce(makeUnit("unit-a", null))
@@ -155,9 +153,8 @@ describe("resolveTemporalOrder — Branch 1 (precise dates)", () => {
   });
 
   it("falls through to Branch 2 when unitB has no date", async () => {
-    const { getTemporalRelation } = await import(
-      "../../mcp/clickhouse/operations.js"
-    );
+    const { getTemporalRelation } =
+      await import("../../mcp/clickhouse/operations.js");
 
     vi.mocked(getStoryUnit)
       .mockResolvedValueOnce(makeUnit("unit-a", 1943))
@@ -168,9 +165,8 @@ describe("resolveTemporalOrder — Branch 1 (precise dates)", () => {
   });
 
   it("falls through to Branch 2 when both units have null dates", async () => {
-    const { getTemporalRelation } = await import(
-      "../../mcp/clickhouse/operations.js"
-    );
+    const { getTemporalRelation } =
+      await import("../../mcp/clickhouse/operations.js");
 
     vi.mocked(getStoryUnit)
       .mockResolvedValueOnce(makeUnit("unit-a", null))
@@ -181,9 +177,7 @@ describe("resolveTemporalOrder — Branch 1 (precise dates)", () => {
   });
 
   it("returns 'indeterminate' when getStoryUnit throws", async () => {
-    vi.mocked(getStoryUnit).mockRejectedValueOnce(
-      new Error("unit not found"),
-    );
+    vi.mocked(getStoryUnit).mockRejectedValueOnce(new Error("unit not found"));
 
     const result = await resolveTemporalOrder("unit-a", "unit-b", UNIVERSE_ID);
     expect(result).toBe("indeterminate");

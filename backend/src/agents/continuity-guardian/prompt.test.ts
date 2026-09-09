@@ -66,6 +66,7 @@ function makeStoryUnit(overrides: Partial<StoryUnit> = {}): StoryUnit {
     claimCount: 89,
     canonTier: 1,
     ...overrides,
+    sourceFileUrl: null,
   };
 }
 
@@ -86,8 +87,16 @@ function makeEvent(overrides: Partial<ResolvedEvent> = {}): ResolvedEvent {
 }
 
 function makeDossier(overrides: Partial<EntityDossier> = {}): EntityDossier {
-  const claimA = makeClaim({ claimId: "claim-a", validFromScene: 5, value: "Meinhardt's safe" });
-  const claimB = makeClaim({ claimId: "claim-b", validFromScene: 9, value: "Clara's satchel" });
+  const claimA = makeClaim({
+    claimId: "claim-a",
+    validFromScene: 5,
+    value: "Meinhardt's safe",
+  });
+  const claimB = makeClaim({
+    claimId: "claim-b",
+    validFromScene: 9,
+    value: "Clara's satchel",
+  });
 
   return {
     focusEntity: makeEntity(),

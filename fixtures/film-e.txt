@@ -1,0 +1,340 @@
+THE LAST SIGNAL
+
+Written for SceneStory Continuity Testing.
+Universe: The Last Signal
+Project: The Last Signal (Canon Tier 1)
+Story Unit: Film E — "The Last Signal"
+In-Universe Period: Present Day, 2026
+In-Universe Date Start: 2026
+
+
+INT. MERIDIAN ARCHIVE — NIGHT
+
+Rain lashes the windows of a small government archive.
+
+ELENA VALE, 34, a careful intelligence archivist, unlocks a steel cabinet.
+Inside sits a BLUE SIGNAL CASE.
+
+Elena removes the case and places it on her desk.
+She opens it. Inside: a compact radio transmitter.
+
+ELENA
+The last transmission was forty years ago.
+
+She checks a handwritten inventory.
+
+ELENA
+Blue Signal Case. Archive storage. Locked.
+
+Elena closes the case.
+She places it in the locked cabinet.
+
+
+EXT. MERIDIAN ARCHIVE — NIGHT
+
+Elena exits the building.
+
+Across the street, MARCUS REED, 40s, watches from beneath an umbrella.
+He speaks quietly into a phone.
+
+MARCUS
+She found it.
+
+A pause.
+
+MARCUS
+No. She doesn't know what it does.
+
+
+INT. ELENA'S APARTMENT — MORNING
+
+Elena studies photographs from the archive.
+One photograph shows her father standing beside the Blue Signal Case.
+
+On the back:
+
+"NEVER TRANSMIT AFTER MIDNIGHT."
+
+Elena writes the warning into her notebook.
+She underlines it twice.
+
+
+INT. MERIDIAN ARCHIVE — DAY
+
+Elena returns to the archive. The cabinet is still locked.
+She opens it.
+
+The BLUE SIGNAL CASE IS GONE.
+
+Elena freezes. She checks the inventory.
+
+ELENA
+That isn't possible.
+
+Her supervisor, DAVID KLINE, enters.
+
+DAVID
+What happened?
+
+ELENA
+The case was here last night.
+
+David examines the empty cabinet.
+
+DAVID
+Did you move it?
+
+ELENA
+No.
+
+
+INT. ARCHIVE SECURITY ROOM — DAY
+
+Elena and David review security footage.
+At 2:13 A.M., Marcus enters the archive.
+He walks directly to the cabinet.
+He removes the Blue Signal Case.
+The footage cuts out.
+
+DAVID
+Who is he?
+
+ELENA
+Marcus Reed. Former field operative.
+
+Elena writes in her notebook:
+
+CASE — POSSESSED BY MARCUS REED
+
+
+INT. ABANDONED TRAIN STATION — EVENING
+
+Marcus places the Blue Signal Case on an old wooden bench.
+He opens it. The transmitter is intact.
+
+He removes a small SILVER KEY hidden beneath the transmitter.
+He pockets the key.
+
+The case remains on the bench.
+
+
+INT. ABANDONED TRAIN STATION — CONTINUOUS
+
+Elena enters. Marcus turns.
+
+ELENA
+You stole the transmitter.
+
+MARCUS
+I stole the case.
+
+He gestures toward the bench.
+The BLUE SIGNAL CASE IS STILL THERE.
+
+Elena approaches it.
+
+ELENA
+Why take it?
+
+Marcus looks toward the dark tunnel.
+
+MARCUS
+Because someone else is looking for the key.
+
+Elena notices the transmitter.
+
+ELENA
+The key isn't here.
+
+Marcus says nothing.
+
+
+EXT. TRAIN STATION — NIGHT
+
+David arrives. He finds Elena outside.
+
+DAVID
+Where's Marcus?
+
+ELENA
+Gone.
+
+DAVID
+And the case?
+
+Elena looks toward the station.
+
+ELENA
+Inside.
+
+
+INT. ABANDONED TRAIN STATION — NIGHT
+
+The station is empty.
+
+The BLUE SIGNAL CASE IS GONE.
+
+Elena searches the bench.
+Only a torn piece of paper remains.
+
+It reads:
+
+"THE KEY OPENS THE LISTENER."
+
+
+INT. MERIDIAN ARCHIVE — NIGHT
+
+Elena returns to the archive.
+She finds Marcus waiting in the records room.
+He holds the SILVER KEY.
+
+ELENA
+You took it.
+
+MARCUS
+I had to.
+
+ELENA
+Where is the case?
+
+Marcus looks confused.
+
+MARCUS
+You took the case.
+
+Elena stares at him.
+
+ELENA
+No. You did.
+
+Neither of them speaks.
+
+
+INT. MERIDIAN ARCHIVE — CONTINUOUS
+
+David enters carrying the Blue Signal Case.
+
+Elena turns.
+
+DAVID
+Looking for this?
+
+He places the case on the table.
+
+ELENA
+Where did you get it?
+
+DAVID
+It was in my office.
+
+Elena looks at Marcus.
+Marcus looks at David.
+
+MARCUS
+You moved it.
+
+David says nothing.
+
+
+INT. MERIDIAN ARCHIVE — LATER
+
+The three examine the transmitter.
+Elena reads the warning from her notebook.
+
+ELENA
+Never transmit after midnight.
+
+Marcus shakes his head.
+
+MARCUS
+That's not a warning.
+
+ELENA
+What is it?
+
+MARCUS
+A rule.
+
+He points to the transmitter.
+
+MARCUS
+The Listener only responds before midnight.
+
+Elena checks the clock.
+11:47 P.M.
+
+
+INT. MERIDIAN ARCHIVE — 11:58 P.M.
+
+Elena inserts the SILVER KEY into the transmitter.
+Nothing happens.
+
+DAVID
+Maybe the key isn't for this.
+
+Marcus notices a symbol beneath the desk.
+He moves the Blue Signal Case.
+A hidden panel is revealed.
+Behind it is an old receiver.
+
+Marcus connects the transmitter.
+The receiver activates.
+
+A voice crackles through the speaker.
+
+VOICE (V.O.)
+Elena Vale.
+
+Elena goes still.
+
+VOICE (V.O.)
+If you are hearing this, your father failed.
+
+
+INT. MERIDIAN ARCHIVE — CONTINUOUS
+
+The voice continues.
+
+VOICE (V.O.)
+The Listener records every transmission.
+
+Elena looks at the transmitter.
+
+ELENA
+Who is listening?
+
+Static. Then:
+
+VOICE (V.O.)
+Someone who already knows where you are.
+
+The lights go out.
+
+
+INT. MERIDIAN ARCHIVE — MOMENTS LATER
+
+Emergency lights flicker on.
+
+The Blue Signal Case is open.
+The SILVER KEY IS GONE.
+
+Elena searches the room.
+Marcus stands beside the receiver.
+David is missing.
+
+Elena looks at the dark doorway.
+
+ELENA
+David?
+
+No answer.
+
+Marcus looks at the clock.
+11:59 P.M.
+
+MARCUS
+We have one minute.
+
+CUT TO BLACK.
+
+END

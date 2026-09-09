@@ -290,7 +290,10 @@ Respond with exactly one JSON object. No markdown. No explanation outside the JS
 
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(
-      () => reject(new Error(`Gemini temporal request timed out after ${TIMEOUT_MS}ms`)),
+      () =>
+        reject(
+          new Error(`Gemini temporal request timed out after ${TIMEOUT_MS}ms`),
+        ),
       TIMEOUT_MS,
     ),
   );
@@ -320,7 +323,9 @@ Respond with exactly one JSON object. No markdown. No explanation outside the JS
     typeof (parsed as Record<string, unknown>).relation !== "string" ||
     typeof (parsed as Record<string, unknown>).reasoning !== "string"
   ) {
-    throw new Error(`Gemini response missing required fields: ${text.slice(0, 200)}`);
+    throw new Error(
+      `Gemini response missing required fields: ${text.slice(0, 200)}`,
+    );
   }
 
   const raw = parsed as { relation: string; reasoning: string };

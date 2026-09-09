@@ -38,6 +38,8 @@ const configObj = {
   // Grafana - MCP
   GRAFANA_MCP_TOKEN: process.env.GRAFANA_MCP_TOKEN,
   GRAFANA_STACK_URL: process.env.GRAFANA_STACK_URL,
+
+  GCS_BUCKET: process.env.GCS_BUCKET,
 };
 
 export const config = configSchema.parse(configObj);

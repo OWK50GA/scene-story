@@ -77,6 +77,7 @@ function rowToStoryUnit(r: Record<string, unknown>): StoryUnit {
     sceneCount: Number(r.scene_count),
     claimCount: Number(r.claim_count),
     canonTier: r.canon_tier != null ? Number(r.canon_tier) : null,
+    sourceFileUrl: (r.source_file_url as string | null | undefined) || null,
   };
 }
 
@@ -358,12 +359,7 @@ function rowToProjectSummary(r: Record<string, unknown>): ProjectSummary {
 }
 
 export async function listProjects(): Promise<ProjectSummary[]> {
-  return select(
-    "listProjects",
-    Q.SELECT_PROJECTS,
-    {},
-    rowToProjectSummary,
-  );
+  return select("listProjects", Q.SELECT_PROJECTS, {}, rowToProjectSummary);
 }
 
 export async function getProjectSummary(
@@ -476,6 +472,16 @@ export async function updateStoryUnitCounts(
     story_unit_id: storyUnitId,
     scene_count: sceneCount,
     claim_count: claimCount,
+  });
+}
+
+export async function updateStoryUnitFileUrl(
+  storyUnitId: string,
+  sourceFileUrl: string,
+): Promise<void> {
+  await command("updateStoryUnitFileUrl", Q.UPDATE_STORY_UNIT_FILE_URL, {
+    story_unit_id: storyUnitId,
+    source_file_url: sourceFileUrl,
   });
 }
 

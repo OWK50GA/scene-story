@@ -97,6 +97,7 @@ export type StoryUnit = {
   sceneCount: number;
   claimCount: number;
   canonTier: number | null;
+  sourceFileUrl: string | null;
 };
 
 /**

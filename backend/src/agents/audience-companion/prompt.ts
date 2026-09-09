@@ -11,7 +11,12 @@
  * assembled by pack-builder.ts and rendered here into the user turn.
  */
 
-import type { CompanionPack, PackFact, SceneDigest, EntitySummary } from "./types.js";
+import type {
+  CompanionPack,
+  PackFact,
+  SceneDigest,
+  EntitySummary,
+} from "./types.js";
 
 // =============================================================================
 // Static system prompt
@@ -1137,7 +1142,9 @@ export function buildUserTurn(pack: CompanionPack, question: string): string {
   lines.push("WATCHED BOUNDARY");
 
   for (const entry of boundary) {
-    lines.push(`  Story unit: ${entry.storyUnitId}  |  up to scene: ${entry.upToScene}`);
+    lines.push(
+      `  Story unit: ${entry.storyUnitId}  |  up to scene: ${entry.upToScene}`,
+    );
   }
 
   lines.push(`  Retrieval mode: ${mode}`);
