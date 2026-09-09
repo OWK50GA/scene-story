@@ -17,6 +17,8 @@ export type Workspace = {
 
 type WorkspaceContextValue = {
   workspace: Workspace;
+  /** True once the persisted workspace has been read from storage. */
+  hydrated: boolean;
   select: (partial: Workspace) => void;
   clear: () => void;
 };
@@ -38,11 +40,13 @@ function readStored(): Workspace {
 
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [workspace, setWorkspace] = useState<Workspace>({});
+  const [hydrated, setHydrated] = useState(false);
   const firstPersist = useRef(true);
 
   useEffect(() => {
     const stored = readStored();
     if (Object.keys(stored).length > 0) setWorkspace(stored);
+    setHydrated(true);
   }, []);
 
   useEffect(() => {
@@ -57,6 +61,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     <WorkspaceContext.Provider
       value={{
         workspace,
+        hydrated,
         select: (partial) => setWorkspace((prev) => ({ ...prev, ...partial })),
         clear: () => setWorkspace({}),
       }}
