@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { LoaderCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, LoaderCircle } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +54,19 @@ export function StoryStateScreen() {
   const { workspace } = useWorkspace();
   const storyUnitId = workspace.storyUnitId;
   const [scene, setScene] = useState("all");
+  const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+
+  function toggleExpanded(id: string) {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
 
   const scenesQuery = useQuery({
     queryKey: ["unit-scenes", storyUnitId],
@@ -123,15 +136,15 @@ export function StoryStateScreen() {
             Fetching story state…
           </div>
         ) : (
-          <Table>
+          <Table className="table-fixed">
             <TableHeader>
               <TableRow>
-                <TableHead>Entity</TableHead>
-                <TableHead>Property</TableHead>
+                <TableHead className="w-[15%]">Entity</TableHead>
+                <TableHead className="w-[22%]">Property</TableHead>
                 <TableHead>Value</TableHead>
-                <TableHead className="w-20">Scene</TableHead>
-                <TableHead className="w-28">Source</TableHead>
-                <TableHead className="w-36">Confidence</TableHead>
+                <TableHead className="w-16">Scene</TableHead>
+                <TableHead className="w-24">Source</TableHead>
+                <TableHead className="w-32">Confidence</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -152,45 +165,94 @@ export function StoryStateScreen() {
                   </TableCell>
                 </TableRow>
               ) : null}
-              {rows.map((row) => (
-                <TableRow key={row.id}>
-                  <TableCell className="font-medium">{row.entity}</TableCell>
-                  <TableCell className="text-muted-foreground">
-                    {row.property}
-                  </TableCell>
-                  <TableCell className="max-w-[260px]">
-                    {row.value}
-                    <span className="mt-0.5 block truncate text-xs text-muted-foreground italic">
-                      {row.sourceLine}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-border px-1 text-xs text-muted-foreground">
-                      {row.scene}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={cn("font-medium", sourceBadge[row.sourceType])}
+              {rows.map((row) => {
+                const isExpanded = expanded.has(row.id);
+                const longValue =
+                  row.value.length > 120 || row.value.includes("\n");
+                return (
+                  <TableRow key={row.id}>
+                    <TableCell
+                      className="truncate align-top font-medium"
+                      title={row.entity}
                     >
-                      {SOURCE_TYPE_LABEL[row.sourceType]}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Progress
-                        value={row.confidence * 100}
-                        className="h-1.5 w-16"
-                        aria-hidden
-                      />
-                      <span className="w-9 text-xs tabular-nums text-muted-foreground">
-                        {row.confidence.toFixed(2)}
+                      {row.entity}
+                    </TableCell>
+                    <TableCell
+                      className="truncate align-top text-muted-foreground"
+                      title={row.property}
+                    >
+                      {row.property}
+                    </TableCell>
+                    <TableCell className="min-w-0 align-top">
+                      <p
+                        className={cn(
+                          "break-words text-sm leading-snug",
+                          !isExpanded && "line-clamp-2",
+                        )}
+                      >
+                        {row.value}
+                      </p>
+                      {longValue ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(row.id)}
+                          aria-expanded={isExpanded}
+                          className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-primary transition-colors hover:text-primary/80 hover:underline"
+                        >
+                          {isExpanded ? (
+                            <>
+                              <ChevronUp className="h-3.5 w-3.5" aria-hidden />
+                              Show less
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown
+                                className="h-3.5 w-3.5"
+                                aria-hidden
+                              />
+                              Show more
+                            </>
+                          )}
+                        </button>
+                      ) : null}
+                      <span
+                        className="mt-1 block truncate text-xs text-muted-foreground italic"
+                        title={row.sourceLine}
+                      >
+                        {row.sourceLine}
                       </span>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-md border border-border px-1 text-xs text-muted-foreground">
+                        {row.scene}
+                      </span>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "font-medium",
+                          sourceBadge[row.sourceType],
+                        )}
+                      >
+                        {SOURCE_TYPE_LABEL[row.sourceType]}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <div className="flex items-center gap-2">
+                        <Progress
+                          value={row.confidence * 100}
+                          className="h-1.5 w-16"
+                          aria-hidden
+                        />
+                        <span className="w-9 text-xs tabular-nums text-muted-foreground">
+                          {row.confidence.toFixed(2)}
+                        </span>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}
