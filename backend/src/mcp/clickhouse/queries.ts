@@ -41,7 +41,8 @@ export const DDL = {
       release_order           UInt32,
       ingestion_status        Enum8('pending'=0, 'ingesting'=1, 'complete'=2, 'failed'=3),
       scene_count             UInt16 DEFAULT 0,
-      claim_count             UInt32 DEFAULT 0
+      claim_count             UInt32 DEFAULT 0,
+      source_file_url         String DEFAULT ''
     ) ENGINE = MergeTree()
     ORDER BY (universe_id, project_id, release_order)
   `,
@@ -290,6 +291,12 @@ export const Q = {
   UPDATE_STORY_UNIT_COUNTS: `
     ALTER TABLE lmm.story_units
     UPDATE scene_count = {scene_count: UInt16}, claim_count = {claim_count: UInt32}
+    WHERE story_unit_id = {story_unit_id: String}
+  `,
+
+  UPDATE_STORY_UNIT_FILE_URL: `
+    ALTER TABLE lmm.story_units
+    UPDATE source_file_url = {source_file_url: String}
     WHERE story_unit_id = {story_unit_id: String}
   `,
 
