@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Info, LockKeyhole, Send } from "lucide-react";
 import { useState } from "react";
 
@@ -15,8 +16,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import type { CompanionAnswer } from "@/lib/domain";
-import { askCompanion, filmA } from "@/lib/mock";
+import {
+  type ApiAskAnswer,
+  askUnit,
+  getUnitClaims,
+  getUnitScenes,
+} from "@/lib/api";
+import { useWorkspace } from "@/lib/workspace-context";
 
 const EXAMPLES = [
   "Where is the Cipher Device?",
@@ -26,18 +32,73 @@ const EXAMPLES = [
 ];
 
 export function ViewerScreen() {
-  const maxScene = filmA.scenes.length;
+  const { workspace } = useWorkspace();
+  const storyUnitId = workspace.storyUnitId;
+
+  const scenesQuery = useQuery({
+    queryKey: ["unit-scenes", storyUnitId],
+    queryFn: () => getUnitScenes(storyUnitId as string),
+    enabled: Boolean(storyUnitId),
+  });
+
+  const claimsQuery = useQuery({
+    queryKey: ["unit-claims", storyUnitId],
+    queryFn: () => getUnitClaims(storyUnitId as string),
+    enabled: Boolean(storyUnitId),
+  });
+
+  const claims = claimsQuery.data ?? [];
+  const claimById = new Map(claims.map((c) => [c.claimId, c]));
+  const scenes = scenesQuery.data ?? [];
+  const maxScene = scenes.length;
+
   const [scene, setScene] = useState(5);
   const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState<CompanionAnswer | null>(null);
+  const [answer, setAnswer] = useState<ApiAskAnswer | null>(null);
   const [asked, setAsked] = useState("");
+  const [asking, setAsking] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  function ask(text: string) {
-    const q = text.trim();
-    if (q === "") return;
-    setAnswer(askCompanion(q, scene));
-    setAsked(q);
+  const maxSceneBound = Math.max(1, maxScene);
+  const boundedScene = Math.min(Math.max(1, scene), maxSceneBound);
+
+  if (!storyUnitId) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Audience Companion</CardTitle>
+          <CardDescription>
+            Ingest a screenplay first, then ask questions about what you have
+            watched.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
   }
+
+  const unitId = storyUnitId;
+  const loading = scenesQuery.isLoading || claimsQuery.isLoading;
+
+  async function ask(text: string) {
+    const q = text.trim();
+    if (q === "" || asking) return;
+    setAsked(q);
+    setAsking(true);
+    setError(null);
+    try {
+      const result = await askUnit(unitId, boundedScene, q);
+      setAnswer(result);
+    } catch (err) {
+      setAnswer(null);
+      setError(err instanceof Error ? err.message : "Ask failed");
+    } finally {
+      setAsking(false);
+    }
+  }
+
+  const facts = (answer?.factsUsed ?? [])
+    .map((id) => claimById.get(id))
+    .filter((claim) => claim !== undefined);
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,27 +108,32 @@ export function ViewerScreen() {
             <div>
               <CardTitle className="text-lg">You&apos;re watching</CardTitle>
               <CardDescription>
-                The Voss Cipher · film-a · {maxScene} scenes
+                {loading
+                  ? "Loading story…"
+                  : `${scenes.length > 0 ? "Story unit" : "No scenes"} · ${maxScene} scenes`}
               </CardDescription>
             </div>
             <Badge className="bg-accent font-medium text-accent-foreground">
-              Scene {scene} of {maxScene}
+              Scene {boundedScene} of {maxScene}
             </Badge>
           </div>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label htmlFor="scene-slider">Spoiler boundary</Label>
               <span className="text-sm text-muted-foreground">
-                answer using scenes 1 to {scene} only
+                answer using scenes 1 to {boundedScene} only
               </span>
             </div>
             <Slider
               id="scene-slider"
               min={1}
-              max={maxScene}
+              max={maxSceneBound}
               step={1}
-              value={[scene]}
-              onValueChange={([value]) => setScene(value)}
+              value={[boundedScene]}
+              onValueChange={([value]) =>
+                setScene(Math.min(Math.max(1, value ?? 1), maxSceneBound))
+              }
+              disabled={loading}
             />
           </div>
         </CardHeader>
@@ -92,9 +158,9 @@ export function ViewerScreen() {
               placeholder="e.g. Where is the Cipher Device?"
               aria-label="Your question"
             />
-            <Button onClick={() => ask(question)}>
+            <Button onClick={() => ask(question)} disabled={asking}>
               <Send className="mr-2 h-4 w-4" aria-hidden />
-              Ask
+              {asking ? "Asking…" : "Ask"}
             </Button>
           </div>
 
@@ -114,37 +180,62 @@ export function ViewerScreen() {
             ))}
           </div>
 
+          {error ? (
+            <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+
           {answer ? (
             <div className="space-y-3 border-t border-border pt-4">
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <LockKeyhole className="h-3.5 w-3.5" aria-hidden />
                 <span>
-                  Asked: “{asked}” · boundary enforced at scene {scene}
+                  Asked: “{asked}” · boundary enforced at scene {boundedScene}
                 </span>
+                <Badge
+                  variant="outline"
+                  className="font-mono text-[10px] tracking-widest uppercase"
+                >
+                  {answer.epistemicState}
+                </Badge>
               </div>
 
               <div
                 className={
-                  answer.notKnown
+                  answer.epistemicState === "unknown"
                     ? "rounded-lg border border-yellow-200 bg-warning px-4 py-3 text-sm text-warning-foreground"
                     : "rounded-lg border border-border bg-background px-4 py-3 text-sm"
                 }
               >
-                {answer.notKnown ? (
+                {answer.epistemicState === "unknown" ? (
                   <Info className="mr-2 inline h-4 w-4" aria-hidden />
                 ) : null}
                 {answer.answer}
               </div>
 
-              {answer.claimsUsed.length > 0 ? (
+              {answer.notKnownAspects.length > 0 ? (
+                <div className="space-y-1.5">
+                  <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
+                    Not yet established
+                  </p>
+                  <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
+                    {answer.notKnownAspects.map((aspect) => (
+                      <li key={aspect}>{aspect}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {facts.length > 0 ? (
                 <div className="space-y-1.5">
                   <p className="text-[11px] font-medium tracking-wide text-muted-foreground uppercase">
                     Facts used to answer
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {answer.claimsUsed.map((claim) => (
+                    {facts.map((claim) => (
                       <Badge
-                        key={claim.id}
+                        key={claim.claimId}
                         variant="outline"
                         className="font-normal"
                       >
