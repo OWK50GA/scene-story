@@ -1,8 +1,9 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Info, LockKeyhole, Send } from "lucide-react";
-import { useState } from "react";
+import { ArrowLeft, FolderKanban, Info, LockKeyhole, Send } from "lucide-react";
+import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,21 +20,16 @@ import { Slider } from "@/components/ui/slider";
 import {
   type ApiAskAnswer,
   askUnit,
+  getProject,
   getUnitClaims,
   getUnitScenes,
+  listStoryUnits,
 } from "@/lib/api";
 import { useWorkspace } from "@/lib/workspace-context";
 
-const EXAMPLES = [
-  "Where is the Cipher Device?",
-  "Who has the Red Ledger?",
-  "Is the right-side lock still empty?",
-  "Where is Clara?",
-];
-
 export function ViewerScreen() {
-  const { workspace } = useWorkspace();
-  const storyUnitId = workspace.storyUnitId;
+  const { workspace, hydrated } = useWorkspace();
+  const { storyUnitId, projectId } = workspace;
 
   const scenesQuery = useQuery({
     queryKey: ["unit-scenes", storyUnitId],
@@ -47,10 +43,43 @@ export function ViewerScreen() {
     enabled: Boolean(storyUnitId),
   });
 
+  const projectQuery = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProject(projectId as string),
+    enabled: Boolean(projectId),
+  });
+
+  const unitsQuery = useQuery({
+    queryKey: ["project-units", projectId],
+    queryFn: () => listStoryUnits(projectId as string),
+    enabled: Boolean(projectId),
+  });
+
   const claims = claimsQuery.data ?? [];
   const claimById = new Map(claims.map((c) => [c.claimId, c]));
   const scenes = scenesQuery.data ?? [];
   const maxScene = scenes.length;
+
+  const title =
+    unitsQuery.data?.find((u) => u.storyUnitId === storyUnitId)?.title ??
+    undefined;
+  const projectName = projectQuery.data?.name;
+
+  const examples = useMemo(() => {
+    const candidates: string[] = [];
+    for (const claim of claims) {
+      if (claim.property.toLowerCase() === "location") {
+        const name = claim.entity.trim();
+        if (name && !candidates.includes(name)) {
+          candidates.push(name);
+          if (candidates.length === 4) break;
+        }
+      }
+    }
+    const prompts = candidates.map((name) => `Where is ${name}?`);
+    if (prompts.length === 0) prompts.push("What is the story about so far?");
+    return prompts;
+  }, [claims]);
 
   const [scene, setScene] = useState(5);
   const [question, setQuestion] = useState("");
@@ -62,22 +91,42 @@ export function ViewerScreen() {
   const maxSceneBound = Math.max(1, maxScene);
   const boundedScene = Math.min(Math.max(1, scene), maxSceneBound);
 
+  if (!hydrated) {
+    return (
+      <Card className="flex items-center justify-center gap-2 px-6 py-14 text-muted-foreground">
+        <Info className="h-4 w-4 animate-pulse" aria-hidden />
+        <span className="text-sm">Loading your studio</span>
+      </Card>
+    );
+  }
+
   if (!storyUnitId) {
     return (
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Audience Companion</CardTitle>
           <CardDescription>
-            Ingest a screenplay first, then ask questions about what you have
-            watched.
+            Open a screenplay from a project, then ask questions about what you
+            have watched.
           </CardDescription>
         </CardHeader>
+        <CardContent>
+          <Button asChild variant="outline">
+            <Link href="/projects">
+              <FolderKanban className="mr-2 h-4 w-4" aria-hidden />
+              Browse projects
+            </Link>
+          </Button>
+        </CardContent>
       </Card>
     );
   }
 
   const unitId = storyUnitId;
-  const loading = scenesQuery.isLoading || claimsQuery.isLoading;
+  const loading =
+    scenesQuery.isLoading ||
+    claimsQuery.isLoading ||
+    (projectId ? projectQuery.isLoading || unitsQuery.isLoading : false);
 
   async function ask(text: string) {
     const q = text.trim();
@@ -102,15 +151,28 @@ export function ViewerScreen() {
 
   return (
     <div className="flex flex-col gap-4">
+      {projectId ? (
+        <Link
+          href={`/projects/${projectId}`}
+          className="inline-flex w-fit items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" aria-hidden />
+          {projectName ?? "Project"}
+        </Link>
+      ) : null}
       <Card>
         <CardHeader className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <CardTitle className="text-lg">You&apos;re watching</CardTitle>
+              <CardTitle className="text-lg">
+                {loading ? "You're watching" : (title ?? "This screenplay")}
+              </CardTitle>
               <CardDescription>
                 {loading
                   ? "Loading story…"
-                  : `${scenes.length > 0 ? "Story unit" : "No scenes"} · ${maxScene} scenes`}
+                  : projectName
+                    ? `${projectName} · ${scenes.length} scenes`
+                    : `${scenes.length} scenes`}
               </CardDescription>
             </div>
             <Badge className="bg-accent font-medium text-accent-foreground">
@@ -155,7 +217,7 @@ export function ViewerScreen() {
               onKeyDown={(event) => {
                 if (event.key === "Enter") ask(question);
               }}
-              placeholder="e.g. Where is the Cipher Device?"
+              placeholder="Ask about a character, object, or place…"
               aria-label="Your question"
             />
             <Button onClick={() => ask(question)} disabled={asking}>
@@ -165,7 +227,7 @@ export function ViewerScreen() {
           </div>
 
           <div className="flex flex-wrap gap-1.5">
-            {EXAMPLES.map((example) => (
+            {examples.map((example) => (
               <button
                 key={example}
                 type="button"
