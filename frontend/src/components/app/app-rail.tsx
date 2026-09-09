@@ -44,7 +44,7 @@ export function AppRail() {
     <aside className="flex w-[76px] shrink-0 flex-col items-center overflow-hidden border-r border-sidebar-border bg-sidebar text-sidebar-foreground">
       <Link
         href="/creator/ingest"
-        aria-label="Living Movie Memory home"
+        aria-label="SceneStory home"
         className="mt-4 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-sm"
       >
         <Clapperboard className="h-5 w-5" />

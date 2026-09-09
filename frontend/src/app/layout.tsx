@@ -25,8 +25,8 @@ const fontScript = Courier_Prime({
 
 export const metadata: Metadata = {
   title: {
-    default: "Living Movie Memory",
-    template: "%s · Living Movie Memory",
+    default: "SceneStory",
+    template: "%s · SceneStory",
   },
   description:
     "A live story-state engine. Catch continuity errors before they reach production, and answer audience questions without spoiling what they haven't seen yet.",
