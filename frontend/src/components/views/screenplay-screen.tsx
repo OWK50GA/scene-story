@@ -104,6 +104,7 @@ export function ScreenplayScreen() {
       scenes={anchors}
       findings={findings}
       title={unit}
+      unitId={storyUnitId}
       onStatusChange={(findingId, status) =>
         statusMutation.mutate({ findingId, status })
       }
