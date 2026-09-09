@@ -1,6 +1,10 @@
-# SceneStory
+<p align="center"><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/scenestory-mark-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/scenestory-mark-light.svg">
+  <img src="assets/scenestory-mark-light.svg" alt="SceneStory" width="480">
+</picture></p>
 
-A structured, queryable story-state engine built on top of a screenplay. It catches continuity errors before they reach production, and answers audience questions without spoiling what they haven't seen yet.
+<p align="center"><em>A structured, queryable story-state engine built on top of a screenplay. It catches continuity errors before they reach production, and answers audience questions without spoiling what they haven't seen yet.</em></p>
 
 Hackathon submission for **Google Cloud Agentic Cinema**, deadline September 9, 2026.
 
