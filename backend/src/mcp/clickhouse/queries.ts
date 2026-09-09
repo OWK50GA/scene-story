@@ -205,6 +205,45 @@ export const Q = {
     LIMIT 1
   `,
 
+  SELECT_PROJECTS: `
+    SELECT
+      p.project_id AS project_id,
+      p.universe_id AS universe_id,
+      p.name AS name,
+      p.type AS type,
+      p.canon_tier AS canon_tier,
+      p.created_at AS created_at,
+      u.name AS universe_name,
+      count(su.story_unit_id) AS unit_count,
+      sum(su.claim_count) AS claim_count
+    FROM lmm.projects p
+    LEFT JOIN lmm.universes u ON p.universe_id = u.universe_id
+    LEFT JOIN lmm.story_units su ON su.project_id = p.project_id
+    GROUP BY
+      project_id, universe_id, name, type, canon_tier, created_at, universe_name
+    ORDER BY created_at DESC
+  `,
+
+  SELECT_PROJECT_SUMMARY: `
+    SELECT
+      p.project_id AS project_id,
+      p.universe_id AS universe_id,
+      p.name AS name,
+      p.type AS type,
+      p.canon_tier AS canon_tier,
+      p.created_at AS created_at,
+      u.name AS universe_name,
+      count(su.story_unit_id) AS unit_count,
+      sum(su.claim_count) AS claim_count
+    FROM lmm.projects p
+    LEFT JOIN lmm.universes u ON p.universe_id = u.universe_id
+    LEFT JOIN lmm.story_units su ON su.project_id = p.project_id
+    WHERE p.project_id = {project_id: String}
+    GROUP BY
+      project_id, universe_id, name, type, canon_tier, created_at, universe_name
+    LIMIT 1
+  `,
+
   // Story Units
   INSERT_STORY_UNIT: `
     INSERT INTO lmm.story_units (

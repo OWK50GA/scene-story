@@ -342,6 +342,49 @@ export async function getProject(projectId: string): Promise<Project> {
   return rows[0]!;
 }
 
+export type ProjectSummary = Project & {
+  universeName: string;
+  unitCount: number;
+  claimCount: number;
+};
+
+function rowToProjectSummary(r: Record<string, unknown>): ProjectSummary {
+  return {
+    ...rowToProject(r),
+    universeName: (r.universe_name as string) ?? "",
+    unitCount: Number(r.unit_count ?? 0),
+    claimCount: Number(r.claim_count ?? 0),
+  };
+}
+
+export async function listProjects(): Promise<ProjectSummary[]> {
+  return select(
+    "listProjects",
+    Q.SELECT_PROJECTS,
+    {},
+    rowToProjectSummary,
+  );
+}
+
+export async function getProjectSummary(
+  projectId: string,
+): Promise<ProjectSummary> {
+  const rows = await select(
+    "getProjectSummary",
+    Q.SELECT_PROJECT_SUMMARY,
+    { project_id: projectId },
+    rowToProjectSummary,
+  );
+  if (rows.length === 0) {
+    throw new MCPOperationError(
+      "getProjectSummary",
+      "project.not_found",
+      `Project ${projectId} not found`,
+    );
+  }
+  return rows[0]!;
+}
+
 // =============================================================================
 // Story unit operations
 // =============================================================================

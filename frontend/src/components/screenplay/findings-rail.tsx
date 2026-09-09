@@ -1,7 +1,6 @@
 "use client";
 
-import { CheckCircle2, CircleOff, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { CheckCircle2, CircleOff, LoaderCircle, Sparkles } from "lucide-react";
 
 import { SEVERITY_TONE } from "@/components/screenplay/presentation";
 import { useScreenplayReader } from "@/components/screenplay/reader-context";
@@ -16,11 +15,15 @@ function FindingDetails({
   finding: Finding;
   fallback: boolean;
 }) {
-  const { statusOf, setStatus } = useScreenplayReader();
-  const [showFix, setShowFix] = useState(false);
+  const { statusOf, setStatus, startFix, fix } = useScreenplayReader();
   const status = statusOf(finding.id);
   const tone = SEVERITY_TONE[finding.severity];
-
+  const isGeneratingThis =
+    fix.status === "running" && fix.findingId === finding.id;
+  const fixScene =
+    finding.claimB.scene !== finding.claimA.scene
+      ? finding.claimB.scene
+      : finding.claimA.scene;
   return (
     <div className="border-b border-border px-5 py-4 last:border-b-0">
       <div className="flex items-start justify-between gap-3">
@@ -112,23 +115,22 @@ function FindingDetails({
             <Button
               size="sm"
               variant="default"
-              onClick={() => setShowFix((v) => !v)}
+              disabled={isGeneratingThis}
+              onClick={() => startFix(finding.id, fixScene)}
             >
-              <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
-              Fix with AI
+              {isGeneratingThis ? (
+                <LoaderCircle
+                  className="mr-1.5 h-3.5 w-3.5 animate-spin"
+                  aria-hidden
+                />
+              ) : (
+                <Sparkles className="mr-1.5 h-3.5 w-3.5" aria-hidden />
+              )}
+              {isGeneratingThis ? "Generating…" : "Fix with AI"}
             </Button>
           </>
         )}
       </div>
-
-      {showFix ? (
-        <div className="mt-3 border border-dashed border-border bg-muted/40 p-3 text-xs leading-relaxed">
-          <p className="font-mono text-[10px] tracking-widest text-muted-foreground uppercase">
-            suggested revision
-          </p>
-          <p className="mt-1">{finding.suggestion}</p>
-        </div>
-      ) : null}
     </div>
   );
 }

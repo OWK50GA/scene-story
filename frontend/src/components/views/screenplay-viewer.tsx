@@ -12,12 +12,14 @@ export function ScreenplayViewer({
   scenes,
   findings,
   title,
+  unitId,
   onStatusChange,
 }: {
   lines: DocLine[];
   scenes: SceneAnchor[];
   findings: Finding[];
   title: string;
+  unitId?: string;
   onStatusChange?: (findingId: string, status: FindingStatus) => void;
 }) {
   return (
@@ -25,6 +27,7 @@ export function ScreenplayViewer({
       lines={lines}
       scenes={scenes}
       findings={findings}
+      unitId={unitId}
       onStatusChange={onStatusChange}
     >
       <div className="flex flex-col gap-4">

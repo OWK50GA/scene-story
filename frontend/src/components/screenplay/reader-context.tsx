@@ -6,14 +6,38 @@ import {
   use,
   useCallback,
   useMemo,
+  useRef,
   useState,
 } from "react";
-
 import { buildAnnotations, type TextAnnotation } from "@/lib/annotations";
+import { streamFindingFix } from "@/lib/api/fix-stream";
 import type { Finding, FindingConflict, FindingStatus } from "@/lib/domain";
 import type { DocLine, SceneAnchor } from "@/lib/screenplay";
 
 export type ViewMode = "read" | "review";
+
+export type FixState =
+  | { status: "idle" }
+  | {
+      status: "running";
+      findingId: string;
+      scene: number;
+      text: string;
+    }
+  | {
+      status: "done";
+      findingId: string;
+      scene: number;
+      text: string;
+      oldText: string;
+    }
+  | {
+      status: "error";
+      findingId: string;
+      scene: number;
+      text: string;
+      message: string;
+    };
 
 type ReaderContextValue = {
   mode: ViewMode;
@@ -32,6 +56,10 @@ type ReaderContextValue = {
   statusOf: (findingId: string) => FindingStatus;
   setStatus: (findingId: string, status: FindingStatus) => void;
   findingCounts: Record<FindingConflict, number>;
+  fix: FixState;
+  startFix: (findingId: string, scene: number) => void;
+  cancelFix: () => void;
+  dismissFix: () => void;
 };
 
 const ReaderContext = createContext<ReaderContextValue | null>(null);
@@ -40,12 +68,14 @@ export function ScreenplayReaderProvider({
   lines,
   scenes,
   findings,
+  unitId,
   onStatusChange,
   children,
 }: {
   lines: DocLine[];
   scenes: SceneAnchor[];
   findings: Finding[];
+  unitId?: string;
   onStatusChange?: (findingId: string, status: FindingStatus) => void;
   children: ReactNode;
 }) {
@@ -53,6 +83,8 @@ export function ScreenplayReaderProvider({
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [hidden, setHidden] = useState<Set<FindingConflict>>(new Set());
   const [overrides, setOverrides] = useState<Record<string, FindingStatus>>({});
+  const [fix, setFix] = useState<FixState>({ status: "idle" });
+  const abortRef = useRef<AbortController | null>(null);
 
   const statusSignature = findings
     .map((finding) => `${finding.id}:${finding.status}`)
@@ -63,6 +95,82 @@ export function ScreenplayReaderProvider({
     setSeenSignature(statusSignature);
     setOverrides({});
   }
+
+  const startFix = useCallback(
+    function startFix(findingId: string, scene: number) {
+      if (!unitId) return;
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+      setFix({ status: "running", findingId, scene, text: "" });
+
+      void streamFindingFix(
+        unitId,
+        findingId,
+        {
+          onDelta: (text) => {
+            if (abortRef.current !== controller) return;
+            setFix((previous) =>
+              previous.status === "running"
+                ? { ...previous, text: previous.text + text }
+                : previous,
+            );
+          },
+          onDone: ({ oldText, newText }) => {
+            if (abortRef.current !== controller) return;
+            setFix({
+              status: "done",
+              findingId,
+              scene,
+              text: newText,
+              oldText,
+            });
+          },
+          onError: (message) => {
+            if (abortRef.current !== controller) return;
+            setFix({
+              status: "error",
+              findingId,
+              scene,
+              text: "",
+              message,
+            });
+          },
+        },
+        controller.signal,
+      ).catch((err: unknown) => {
+        if (abortRef.current !== controller) return;
+        if (err instanceof DOMException && err.name === "AbortError") {
+          setFix({ status: "idle" });
+          return;
+        }
+        const message = err instanceof Error ? err.message : "Fix failed";
+        setFix((previous) => {
+          if (previous.status === "running") {
+            return {
+              status: "error",
+              findingId,
+              scene,
+              text: previous.text,
+              message,
+            };
+          }
+          return previous;
+        });
+      });
+    },
+    [unitId],
+  );
+
+  const cancelFix = useCallback(function cancelFix() {
+    abortRef.current?.abort();
+    setFix({ status: "idle" });
+  }, []);
+
+  const dismissFix = useCallback(function dismissFix() {
+    abortRef.current?.abort();
+    setFix({ status: "idle" });
+  }, []);
 
   const annotations = useMemo(
     () => buildAnnotations(lines, scenes, findings),
@@ -184,6 +292,10 @@ export function ScreenplayReaderProvider({
       statusOf,
       setStatus,
       findingCounts,
+      fix,
+      startFix,
+      cancelFix,
+      dismissFix,
     }),
     [
       mode,
@@ -201,6 +313,10 @@ export function ScreenplayReaderProvider({
       toggleConflict,
       statusOf,
       setStatus,
+      fix,
+      startFix,
+      cancelFix,
+      dismissFix,
     ],
   );
 
