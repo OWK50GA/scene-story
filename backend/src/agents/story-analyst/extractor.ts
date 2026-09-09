@@ -8,6 +8,7 @@ import {
   type StoryUnit,
 } from "../../types/index.js";
 import { buildExtractionPrompt, type ExtractionPromptInput } from "./prompt.js";
+import { GEMINI_MODEL } from "../../config/models.js";
 
 // =============================================================================
 // Story Analyst — Scene Extractor
@@ -29,7 +30,7 @@ import { buildExtractionPrompt, type ExtractionPromptInput } from "./prompt.js";
 // Constants
 // -----------------------------------------------------------------------------
 
-const MODEL = "gemini-3.5-flash";
+const MODEL = GEMINI_MODEL;
 const TIMEOUT_MS = 30_000;
 const MAX_ATTEMPTS = 2;
 

@@ -26,6 +26,7 @@ import {
 import { log } from "../../observability/logger.js";
 import type { SpoilerBoundaryEntry } from "../../types/index.js";
 import { z } from "zod";
+import { GEMINI_MODEL } from "../../config/models.js";
 
 // =============================================================================
 // Director — ADK LlmAgent
@@ -51,7 +52,7 @@ import { z } from "zod";
 // -----------------------------------------------------------------------------
 
 const gemini = new Gemini({
-  model: "gemini-3.5-flash",
+  model: GEMINI_MODEL,
   apiKey: config.GEMINI_API_KEY,
 });
 
