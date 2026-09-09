@@ -7,9 +7,9 @@
  * without touching this file.
  *
  * Current candidates:
- *   gemini-3.5-flash  — current default; frontier-level, fast, agentic-optimised
+ *   gemini-3.5-flash  — frontier-level, fast, agentic-optimised
  *   gemini-3.6-flash  — next iteration
- *   gemini-3.7-flash  — higher reasoning quality, moderate latency increase
+ *   gemini-3.7-flash  — current default; higher reasoning quality, moderate latency increase
  *   gemini-3.8-flash  — latest; highest quality, unknown latency profile
  */
 
