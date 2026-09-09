@@ -27,6 +27,7 @@ function makeUnit(overrides: Partial<StoryUnit> = {}): StoryUnit {
     sceneCount: 14,
     claimCount: 0,
     canonTier: 1,
+    sourceFileUrl: null,
     ...overrides,
   };
 }

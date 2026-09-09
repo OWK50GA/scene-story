@@ -230,7 +230,7 @@ export async function ingestFileHttp(req: Request, res: Response) {
   // Upload original screenplay to GCS for auditability and re-processing.
   // Non-blocking — a GCS failure must never abort ingestion.
   if (config.GCS_BUCKET) {
-    const ext = (file.originalname.toLowerCase().split(".").pop() ?? "txt");
+    const ext = file.originalname.toLowerCase().split(".").pop() ?? "txt";
     uploadScreenplay(file.buffer, unit.universeId, storyUnitId, ext)
       .then((url) => updateStoryUnitFileUrl(storyUnitId, url))
       .catch((err: unknown) => {
@@ -591,7 +591,11 @@ export async function askStoryUnitHttp(req: Request, res: Response) {
     // Verify the unit exists before calling the Companion.
     await getStoryUnit(storyUnitId);
 
-    const answer = await companionAgent.askUnit(storyUnitId, upToScene, question);
+    const answer = await companionAgent.askUnit(
+      storyUnitId,
+      upToScene,
+      question,
+    );
 
     return res.status(200).json({
       answer: answer.answer,
@@ -608,7 +612,6 @@ export async function askStoryUnitHttp(req: Request, res: Response) {
     return handleError(err, res);
   }
 }
-
 
 const FixFindingParamSchema = z.object({
   id: z.uuid(),
@@ -690,8 +693,16 @@ export async function fixFindingHttp(req: Request, res: Response) {
       finding_id: finding.findingId,
       scene: sceneNumber,
       claims: [
-        { scene: claimA.sourceSceneNumber, property: claimA.property, value: claimA.value },
-        { scene: claimB.sourceSceneNumber, property: claimB.property, value: claimB.value },
+        {
+          scene: claimA.sourceSceneNumber,
+          property: claimA.property,
+          value: claimA.value,
+        },
+        {
+          scene: claimB.sourceSceneNumber,
+          property: claimB.property,
+          value: claimB.value,
+        },
       ],
     });
 

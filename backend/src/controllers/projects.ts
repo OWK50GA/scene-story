@@ -31,7 +31,7 @@ const ProjectParamSchema = z.object({
 });
 
 const FindingParamSchema = z.object({
-  id: z.uuid(),         // project id
+  id: z.uuid(), // project id
   findingId: z.uuid(),
 });
 
@@ -261,10 +261,7 @@ export async function getFindingsForProjectHttp(req: Request, res: Response) {
   }
 }
 
-export async function getStoryUnitsForProjectHttp(
-  req: Request,
-  res: Response,
-) {
+export async function getStoryUnitsForProjectHttp(req: Request, res: Response) {
   const parsed = ProjectParamSchema.safeParse(req.params);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];

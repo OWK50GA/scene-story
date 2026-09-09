@@ -71,7 +71,7 @@ const FILM_A_UNIT: StoryUnit = {
   ingestionStatus: "pending",
   sceneCount: 0,
   claimCount: 0,
-  canonTier: 1
+  canonTier: 1,
 };
 
 // ---------------------------------------------------------------------------

@@ -185,7 +185,10 @@ async function callGemini(userTurn: string): Promise<string> {
       // This mirrors the Story Analyst pattern and keeps the static prompt
       // out of the per-candidate content so it could be cached in future.
       { role: "user", parts: [{ text: STATIC_SYSTEM_PROMPT }] },
-      { role: "model", parts: [{ text: "Understood. I am ready to investigate." }] },
+      {
+        role: "model",
+        parts: [{ text: "Understood. I am ready to investigate." }],
+      },
       { role: "user", parts: [{ text: userTurn }] },
     ],
     config: {
@@ -211,8 +214,7 @@ async function callGemini(userTurn: string): Promise<string> {
  * Returns a discriminated union so the caller avoids nested try/catch.
  */
 type ParseResult =
-  | { ok: true; data: GuardianVerdict }
-  | { ok: false; error: string };
+  { ok: true; data: GuardianVerdict } | { ok: false; error: string };
 
 function parseAndValidate(raw: string): ParseResult {
   let parsed: unknown;

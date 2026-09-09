@@ -149,7 +149,9 @@ export async function runWithinUnitPass(
     detail: { candidateCount: candidates.length },
   });
 
-  console.log(`[guardian] within-unit pass: ${candidates.length} candidates for unit ${storyUnitId}`);
+  console.log(
+    `[guardian] within-unit pass: ${candidates.length} candidates for unit ${storyUnitId}`,
+  );
 
   recordClaimPairsExamined("within_unit", candidates.length);
 
@@ -170,10 +172,15 @@ export async function runWithinUnitPass(
 
       // c. Apply verdict
       if (verdict.conflictType === "normal_transition") {
-        console.log(`[guardian] normal_transition: [${candidate.property}] "${candidate.valueA}" → "${candidate.valueB}"`);
+        console.log(
+          `[guardian] normal_transition: [${candidate.property}] "${candidate.valueA}" → "${candidate.valueB}"`,
+        );
         // Legitimate state change — close the earlier claim.
         // No finding written.
-        await updateClaimValidTo(earlierClaim.claimId, laterClaim.validFromScene);
+        await updateClaimValidTo(
+          earlierClaim.claimId,
+          laterClaim.validFromScene,
+        );
 
         log({
           agent: "guardian",
@@ -190,7 +197,9 @@ export async function runWithinUnitPass(
           },
         });
       } else {
-        console.log(`[guardian] FINDING: [${candidate.property}] ${verdict.conflictType}/${verdict.severity} — "${candidate.valueA}" vs "${candidate.valueB}"`);
+        console.log(
+          `[guardian] FINDING: [${candidate.property}] ${verdict.conflictType}/${verdict.severity} — "${candidate.valueA}" vs "${candidate.valueB}"`,
+        );
         // confirmed or ambiguous — write a finding, then close the earlier claim.
         const finding = await writeFinding({
           universeId: unit.universeId,
@@ -209,7 +218,10 @@ export async function runWithinUnitPass(
         findings.push(finding);
         recordFindingWritten(verdict.conflictType, "within_unit");
 
-        await updateClaimValidTo(earlierClaim.claimId, laterClaim.validFromScene);
+        await updateClaimValidTo(
+          earlierClaim.claimId,
+          laterClaim.validFromScene,
+        );
 
         log({
           agent: "guardian",

@@ -182,7 +182,10 @@ export async function runQuery<T = Record<string, unknown>>(
       Array.isArray((parsed as Record<string, unknown>).columns) &&
       Array.isArray((parsed as Record<string, unknown>).rows)
     ) {
-      const { columns, rows } = parsed as { columns: string[]; rows: unknown[][] };
+      const { columns, rows } = parsed as {
+        columns: string[];
+        rows: unknown[][];
+      };
       return rows.map((row) => {
         const obj: Record<string, unknown> = {};
         for (let i = 0; i < columns.length; i++) {

@@ -68,7 +68,8 @@ const OUTPUT_DIR = path.resolve(__dirname, "output");
 
 /** Models to benchmark. Override via BENCHMARK_MODELS env var (comma-separated). */
 const CANDIDATE_MODELS: string[] = (
-  process.env.BENCHMARK_MODELS ?? "gemini-3.5-flash,gemini-3.6-flash,gemini-3.7-flash,gemini-3.8-flash"
+  process.env.BENCHMARK_MODELS ??
+  "gemini-3.5-flash,gemini-3.6-flash,gemini-3.7-flash,gemini-3.8-flash"
 )
   .split(",")
   .map((s) => s.trim())
@@ -78,7 +79,10 @@ const CANDIDATE_MODELS: string[] = (
 const REPS = Math.max(1, parseInt(process.env.BENCHMARK_REPS ?? "3", 10));
 
 /** Milliseconds to wait between Gemini calls to avoid 429s. Override via BENCHMARK_DELAY_MS. */
-const DELAY_MS = Math.max(0, parseInt(process.env.BENCHMARK_DELAY_MS ?? "4000", 10));
+const DELAY_MS = Math.max(
+  0,
+  parseInt(process.env.BENCHMARK_DELAY_MS ?? "4000", 10),
+);
 
 const TIMEOUT_MS = 60_000;
 
@@ -219,9 +223,7 @@ const PROBES: Probe[] = [
   {
     id: "P1",
     label: "Extraction — small output (TTFT probe)",
-    buildContents: () => [
-      { role: "user", parts: [{ text: PROBE_1_PROMPT }] },
-    ],
+    buildContents: () => [{ role: "user", parts: [{ text: PROBE_1_PROMPT }] }],
   },
   {
     id: "P2",
@@ -229,15 +231,20 @@ const PROBES: Probe[] = [
     buildContents: () => [
       { role: "user", parts: [{ text: PROBE_2_SYSTEM }] },
       { role: "model", parts: [{ text: "Understood. Ready to extract." }] },
-      { role: "user", parts: [{ text: `Scene text:\n${PROBE_2_SCENE}\n\nExtract all claims, entities, and events from this scene. Be thorough — each named entity should have multiple claims if the scene supports them.` }] },
+      {
+        role: "user",
+        parts: [
+          {
+            text: `Scene text:\n${PROBE_2_SCENE}\n\nExtract all claims, entities, and events from this scene. Be thorough — each named entity should have multiple claims if the scene supports them.`,
+          },
+        ],
+      },
     ],
   },
   {
     id: "P3",
     label: "Temporal ordering (Guardian)",
-    buildContents: () => [
-      { role: "user", parts: [{ text: PROBE_3_PROMPT }] },
-    ],
+    buildContents: () => [{ role: "user", parts: [{ text: PROBE_3_PROMPT }] }],
   },
 ];
 
@@ -329,12 +336,12 @@ function computeStats(reps: RepResult[]): ProbeResult["stats"] {
     p95Ms: durations.length > 0 ? percentile(durations, 95) : null,
     minMs: durations.length > 0 ? durations[0] : null,
     maxMs: durations.length > 0 ? durations[durations.length - 1] : null,
-    meanInputTokens: inputTokens.length > 0 ? Math.round(mean(inputTokens)) : null,
-    meanOutputTokens: outputTokens.length > 0 ? Math.round(mean(outputTokens)) : null,
+    meanInputTokens:
+      inputTokens.length > 0 ? Math.round(mean(inputTokens)) : null,
+    meanOutputTokens:
+      outputTokens.length > 0 ? Math.round(mean(outputTokens)) : null,
     meanThroughputToksPerSec:
-      throughputs.length > 0
-        ? Math.round(mean(throughputs) * 10) / 10
-        : null,
+      throughputs.length > 0 ? Math.round(mean(throughputs) * 10) / 10 : null,
   };
 }
 
@@ -345,7 +352,11 @@ function computeStats(reps: RepResult[]): ProbeResult["stats"] {
 async function callGemini(
   model: string,
   contents: ProbeContents,
-): Promise<{ text: string; inputTokens: number | null; outputTokens: number | null }> {
+): Promise<{
+  text: string;
+  inputTokens: number | null;
+  outputTokens: number | null;
+}> {
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(
       () => reject(new Error(`Timed out after ${TIMEOUT_MS}ms`)),
@@ -366,12 +377,10 @@ async function callGemini(
 
   // usageMetadata field names vary slightly across SDK versions.
   // Access defensively.
-  const meta = (response as unknown as Record<string, unknown>).usageMetadata as
-    | Record<string, number>
-    | undefined;
+  const meta = (response as unknown as Record<string, unknown>)
+    .usageMetadata as Record<string, number> | undefined;
 
-  const inputTokens =
-    meta?.promptTokenCount ?? meta?.inputTokenCount ?? null;
+  const inputTokens = meta?.promptTokenCount ?? meta?.inputTokenCount ?? null;
   const outputTokens =
     meta?.candidatesTokenCount ?? meta?.outputTokenCount ?? null;
 
@@ -505,10 +514,14 @@ function buildReport(output: BenchmarkOutput): string {
         fmt(s.p95Ms).padStart(8),
         fmt(s.minMs).padStart(8),
         fmt(s.maxMs).padStart(8),
-        (s.meanOutputTokens !== null ? String(s.meanOutputTokens) : "—").padStart(9),
+        (s.meanOutputTokens !== null
+          ? String(s.meanOutputTokens)
+          : "—"
+        ).padStart(9),
         (s.meanThroughputToksPerSec !== null
           ? String(s.meanThroughputToksPerSec)
-          : "—").padStart(7),
+          : "—"
+        ).padStart(7),
         `${s.successCount}/${s.successCount + s.failCount}`.padStart(7),
       ].join("");
       lines.push(row);
@@ -573,13 +586,12 @@ function buildReport(output: BenchmarkOutput): string {
   if (p2Results.length > 0) {
     const winner = p2Results[0];
     const winnerP2 = winner.probe!.stats.meanMs!;
-    const baselineP2 = output.results[0]?.probes.find((p) => p.probeId === "P2")?.stats.meanMs;
+    const baselineP2 = output.results[0]?.probes.find((p) => p.probeId === "P2")
+      ?.stats.meanMs;
 
     if (baselineP2 != null && winner.model !== output.results[0]?.model) {
       const saving = Math.round(((baselineP2 - winnerP2) / baselineP2) * 100);
-      lines.push(
-        `  Fastest on P2 (real workload): ${winner.model}`,
-      );
+      lines.push(`  Fastest on P2 (real workload): ${winner.model}`);
       lines.push(
         `  Mean P2 latency: ${winnerP2}ms vs ${baselineP2}ms baseline (${saving > 0 ? `${saving}% faster` : `${Math.abs(saving)}% slower`})`,
       );
@@ -638,11 +650,15 @@ async function main() {
   console.log("  GEMINI MODEL BENCHMARK");
   console.log("═".repeat(78));
   console.log(`  Models  : ${CANDIDATE_MODELS.join(", ")}`);
-  console.log(`  Probes  : ${PROBES.map((p) => `${p.id} (${p.label})`).join("\n            ")}`);
+  console.log(
+    `  Probes  : ${PROBES.map((p) => `${p.id} (${p.label})`).join("\n            ")}`,
+  );
   console.log(`  Reps    : ${REPS} per probe per model`);
   console.log(`  Delay   : ${DELAY_MS}ms between calls`);
   console.log(`  Timeout : ${TIMEOUT_MS}ms per call`);
-  console.log(`  Total   : ${totalCalls} API calls, ~${estimatedMinutes} min estimated`);
+  console.log(
+    `  Total   : ${totalCalls} API calls, ~${estimatedMinutes} min estimated`,
+  );
   console.log(`  Output  : ${jsonFile}`);
   console.log("═".repeat(78));
   console.log();

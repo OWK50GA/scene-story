@@ -51,24 +51,32 @@ async function post<T>(url: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   const json = (await res.json()) as T;
-  if (!res.ok) throw new Error(`POST ${url} → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(`POST ${url} → ${res.status}: ${JSON.stringify(json)}`);
   return json;
 }
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url);
   const json = (await res.json()) as T;
-  if (!res.ok) throw new Error(`GET ${url} → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(`GET ${url} → ${res.status}: ${JSON.stringify(json)}`);
   return json;
 }
 
-async function postFile(url: string, filePath: string): Promise<Record<string, unknown>> {
+async function postFile(
+  url: string,
+  filePath: string,
+): Promise<Record<string, unknown>> {
   const form = new FormData();
   const blob = new Blob([fs.readFileSync(filePath)], { type: "text/plain" });
   form.append("file", blob, path.basename(filePath));
   const res = await fetch(url, { method: "POST", body: form });
   const json = (await res.json()) as Record<string, unknown>;
-  if (!res.ok) throw new Error(`POST ${url} (file) → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(
+      `POST ${url} (file) → ${res.status}: ${JSON.stringify(json)}`,
+    );
   return json;
 }
 
@@ -82,9 +90,15 @@ function banner(text: string) {
   console.log("─".repeat(60));
 }
 
-function pass(msg: string) { console.log(`  ✓ ${msg}`); }
-function fail(msg: string) { console.log(`  ✗ ${msg}`); }
-function info(msg: string) { console.log(`    ${msg}`); }
+function pass(msg: string) {
+  console.log(`  ✓ ${msg}`);
+}
+function fail(msg: string) {
+  console.log(`  ✗ ${msg}`);
+}
+function info(msg: string) {
+  console.log(`    ${msg}`);
+}
 
 async function waitForIngestion(unitId: string): Promise<{
   ingestion_status: string;
@@ -130,18 +144,23 @@ async function main() {
   let failed_count = 0;
 
   function check(condition: boolean, label: string, detail?: string): void {
-    if (condition) { pass(label); passed++; }
-    else { fail(label); failed_count++; }
+    if (condition) {
+      pass(label);
+      passed++;
+    } else {
+      fail(label);
+      failed_count++;
+    }
     if (detail) info(detail);
   }
 
   // ── 1. Universe / project / unit ─────────────────────────────────────────
   banner("Step 1 — Create universe, project, story unit");
 
-  const universe = await post<{ universe_id: string }>(
-    `${BASE}/universes`,
-    { name: "The Tide House", description: "Coastal mystery, 2026" },
-  );
+  const universe = await post<{ universe_id: string }>(`${BASE}/universes`, {
+    name: "The Tide House",
+    description: "Coastal mystery, 2026",
+  });
   const universeId = universe.universe_id;
   pass(`Universe created: ${universeId}`);
 
@@ -152,19 +171,19 @@ async function main() {
   const projectId = project.data.project_id;
   pass(`Project created: ${projectId}`);
 
-  const unit = await post<{ status: string; story_unit: { story_unit_id: string } }>(
-    `${BASE}/projects/${projectId}/units`,
-    {
-      projectId,
-      universeId,
-      title: "Low Water",
-      unitType: "film",
-      inUniversePeriod: "Present Day, 2026",
-      inUniverseDateStart: 2026,
-      inUniverseDateEnd: 2026,
-      releaseOrder: 1,
-    },
-  );
+  const unit = await post<{
+    status: string;
+    story_unit: { story_unit_id: string };
+  }>(`${BASE}/projects/${projectId}/units`, {
+    projectId,
+    universeId,
+    title: "Low Water",
+    unitType: "film",
+    inUniversePeriod: "Present Day, 2026",
+    inUniverseDateStart: 2026,
+    inUniverseDateEnd: 2026,
+    releaseOrder: 1,
+  });
   const unitId = unit.story_unit.story_unit_id;
   pass(`Story unit created: ${unitId}`);
 
@@ -178,9 +197,17 @@ async function main() {
   banner("Step 3 — Wait for pipeline");
   console.log("  Polling...");
   const ingestion = await waitForIngestion(unitId);
-  check(ingestion.ingestion_status !== "failed", "Ingestion completed without fatal failure");
-  check(ingestion.failed_scenes.length === 0, "No failed scenes",
-    ingestion.failed_scenes.length > 0 ? `Failed: ${ingestion.failed_scenes.join(", ")}` : undefined);
+  check(
+    ingestion.ingestion_status !== "failed",
+    "Ingestion completed without fatal failure",
+  );
+  check(
+    ingestion.failed_scenes.length === 0,
+    "No failed scenes",
+    ingestion.failed_scenes.length > 0
+      ? `Failed: ${ingestion.failed_scenes.join(", ")}`
+      : undefined,
+  );
   check(ingestion.claim_count > 0, `Claims written: ${ingestion.claim_count}`);
 
   // ── 4. Per-scene claim count ──────────────────────────────────────────────
@@ -203,7 +230,10 @@ async function main() {
       failed_count++;
     }
   }
-  if (underfilledScenes === 0) { pass(`All ${byScene.size} scenes have ≥2 claims`); passed++; }
+  if (underfilledScenes === 0) {
+    pass(`All ${byScene.size} scenes have ≥2 claims`);
+    passed++;
+  }
 
   // ── 5. Sonar unit tracked in scene 3 ─────────────────────────────────────
   banner("Step 5 — Sonar unit has a claim in scene 3");
@@ -280,13 +310,16 @@ async function main() {
   const findings = guardianResp.data.findings;
 
   for (const f of findings) {
-    info(`[${f.conflict_type.toUpperCase()}/${f.severity}] ${f.explanation.slice(0, 120)}`);
+    info(
+      `[${f.conflict_type.toUpperCase()}/${f.severity}] ${f.explanation.slice(0, 120)}`,
+    );
   }
 
   // Sonar unit: should be ambiguous (not confirmed — offscreen movement possible)
-  const sonarFinding = findings.find((f) =>
-    f.explanation.toLowerCase().includes("sonar") ||
-    f.explanation.toLowerCase().includes("ledge"),
+  const sonarFinding = findings.find(
+    (f) =>
+      f.explanation.toLowerCase().includes("sonar") ||
+      f.explanation.toLowerCase().includes("ledge"),
   );
   if (sonarFinding) {
     check(
@@ -295,7 +328,9 @@ async function main() {
       `  ${sonarFinding.explanation.slice(0, 100)}`,
     );
   } else {
-    info("Sonar unit: no finding written (acceptable if Guardian read it as normal_transition)");
+    info(
+      "Sonar unit: no finding written (acceptable if Guardian read it as normal_transition)",
+    );
   }
 
   // Compass: this is the KEY test — must NOT be confirmed despite value delta
@@ -314,19 +349,27 @@ async function main() {
         "Compass: Guardian called CONFIRMED — it did not incorporate the scene 13 rule claim",
       );
       failed_count++;
-      info("  This means the reasoner is classifying from the state delta alone, not the full history");
+      info(
+        "  This means the reasoner is classifying from the state delta alone, not the full history",
+      );
     }
   } else {
-    pass("Compass: no finding written — Guardian read scene 13 rule and determined normal_transition");
+    pass(
+      "Compass: no finding written — Guardian read scene 13 rule and determined normal_transition",
+    );
     passed++;
   }
 
   // ── 9–13. Companion questions ─────────────────────────────────────────────
   banner("Step 9 — Companion: compass at scene 11 (should be missing)");
-  const q9 = await post<{ status: string; epistemic_state: string; answer: string }>(
-    `${BASE}/units/${unitId}/ask`,
-    { question: "Where is the brass compass?", up_to_scene: 11 },
-  );
+  const q9 = await post<{
+    status: string;
+    epistemic_state: string;
+    answer: string;
+  }>(`${BASE}/units/${unitId}/ask`, {
+    question: "Where is the brass compass?",
+    up_to_scene: 11,
+  });
   check(q9.status === "success", "Companion responded");
   check(
     q9.epistemic_state === "partial" || q9.epistemic_state === "unknown",
@@ -334,11 +377,17 @@ async function main() {
   );
   info(`Answer: ${q9.answer?.slice(0, 120)}`);
 
-  banner("Step 10 — Companion: compass at scene 13 (should cite kitchen + rule)");
-  const q10 = await post<{ status: string; epistemic_state: string; answer: string }>(
-    `${BASE}/units/${unitId}/ask`,
-    { question: "Where is the brass compass?", up_to_scene: 13 },
+  banner(
+    "Step 10 — Companion: compass at scene 13 (should cite kitchen + rule)",
   );
+  const q10 = await post<{
+    status: string;
+    epistemic_state: string;
+    answer: string;
+  }>(`${BASE}/units/${unitId}/ask`, {
+    question: "Where is the brass compass?",
+    up_to_scene: 13,
+  });
   check(q10.status === "success", "Companion responded");
   check(
     q10.epistemic_state === "known" || q10.epistemic_state === "partial",
@@ -348,14 +397,21 @@ async function main() {
     q10.answer?.toLowerCase().includes("return") ||
     q10.answer?.toLowerCase().includes("always") ||
     q10.answer?.toLowerCase().includes("kitchen");
-  check(mentionsRule, 'Answer references kitchen counter or "always returns" rule');
+  check(
+    mentionsRule,
+    'Answer references kitchen counter or "always returns" rule',
+  );
   info(`Answer: ${q10.answer?.slice(0, 120)}`);
 
   banner("Step 11 — Companion: how did compass get back? (gap + rule)");
-  const q11 = await post<{ status: string; epistemic_state: string; answer: string }>(
-    `${BASE}/units/${unitId}/ask`,
-    { question: "How did the compass get back to the kitchen?", up_to_scene: 13 },
-  );
+  const q11 = await post<{
+    status: string;
+    epistemic_state: string;
+    answer: string;
+  }>(`${BASE}/units/${unitId}/ask`, {
+    question: "How did the compass get back to the kitchen?",
+    up_to_scene: 13,
+  });
   check(q11.status === "success", "Companion responded");
   check(
     q11.epistemic_state === "partial" || q11.epistemic_state === "unknown",
@@ -364,19 +420,29 @@ async function main() {
   info(`Answer: ${q11.answer?.slice(0, 120)}`);
 
   banner("Step 12 — Companion: summary mode (catch me up to scene 8)");
-  const q12 = await post<{ status: string; epistemic_state: string; answer: string }>(
-    `${BASE}/units/${unitId}/ask`,
-    { question: "Catch me up from the beginning", up_to_scene: 8 },
-  );
+  const q12 = await post<{
+    status: string;
+    epistemic_state: string;
+    answer: string;
+  }>(`${BASE}/units/${unitId}/ask`, {
+    question: "Catch me up from the beginning",
+    up_to_scene: 8,
+  });
   check(q12.status === "success", "Companion responded to summary request");
   check(q12.answer?.length > 100, "Summary is substantive (>100 chars)");
   info(`Answer: ${q12.answer?.slice(0, 200)}`);
 
-  banner("Step 13 — Companion: what should I remember? (load-bearing facts, scene 9)");
-  const q13 = await post<{ status: string; epistemic_state: string; answer: string }>(
-    `${BASE}/units/${unitId}/ask`,
-    { question: "What should I remember before continuing?", up_to_scene: 9 },
+  banner(
+    "Step 13 — Companion: what should I remember? (load-bearing facts, scene 9)",
   );
+  const q13 = await post<{
+    status: string;
+    epistemic_state: string;
+    answer: string;
+  }>(`${BASE}/units/${unitId}/ask`, {
+    question: "What should I remember before continuing?",
+    up_to_scene: 9,
+  });
   check(q13.status === "success", "Companion responded");
   const mentionsCompass = q13.answer?.toLowerCase().includes("compass");
   check(mentionsCompass, "Answer mentions compass (load-bearing object)");

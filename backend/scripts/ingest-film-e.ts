@@ -72,24 +72,32 @@ async function post<T>(url: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   const json = (await res.json()) as T;
-  if (!res.ok) throw new Error(`POST ${url} → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(`POST ${url} → ${res.status}: ${JSON.stringify(json)}`);
   return json;
 }
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url);
   const json = (await res.json()) as T;
-  if (!res.ok) throw new Error(`GET ${url} → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(`GET ${url} → ${res.status}: ${JSON.stringify(json)}`);
   return json;
 }
 
-async function postFile(url: string, filePath: string): Promise<Record<string, unknown>> {
+async function postFile(
+  url: string,
+  filePath: string,
+): Promise<Record<string, unknown>> {
   const form = new FormData();
   const blob = new Blob([fs.readFileSync(filePath)], { type: "text/plain" });
   form.append("file", blob, path.basename(filePath));
   const res = await fetch(url, { method: "POST", body: form });
   const json = (await res.json()) as Record<string, unknown>;
-  if (!res.ok) throw new Error(`POST ${url} (file) → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(
+      `POST ${url} (file) → ${res.status}: ${JSON.stringify(json)}`,
+    );
   return json;
 }
 
@@ -103,9 +111,15 @@ function banner(text: string) {
   console.log("─".repeat(60));
 }
 
-function pass(msg: string) { console.log(`  ✓ ${msg}`); }
-function fail(msg: string) { console.log(`  ✗ ${msg}`); }
-function info(msg: string) { console.log(`    ${msg}`); }
+function pass(msg: string) {
+  console.log(`  ✓ ${msg}`);
+}
+function fail(msg: string) {
+  console.log(`  ✗ ${msg}`);
+}
+function info(msg: string) {
+  console.log(`    ${msg}`);
+}
 
 async function waitForIngestion(unitId: string): Promise<{
   ingestion_status: string;
@@ -151,18 +165,24 @@ async function main() {
   let failed_count = 0;
 
   function check(condition: boolean, label: string, detail?: string): void {
-    if (condition) { pass(label); passed++; }
-    else { fail(label); failed_count++; }
+    if (condition) {
+      pass(label);
+      passed++;
+    } else {
+      fail(label);
+      failed_count++;
+    }
     if (detail) info(detail);
   }
 
   // ── 1. Universe / project / unit ─────────────────────────────────────────
   banner("Step 1 — Create universe, project, story unit");
 
-  const universe = await post<{ universe_id: string }>(
-    `${BASE}/universes`,
-    { name: "The Last Signal", description: "An intelligence archivist uncovers a hidden transmitter and a conspiracy." },
-  );
+  const universe = await post<{ universe_id: string }>(`${BASE}/universes`, {
+    name: "The Last Signal",
+    description:
+      "An intelligence archivist uncovers a hidden transmitter and a conspiracy.",
+  });
   const universeId = universe.universe_id;
   pass(`Universe: ${universeId}`);
 
@@ -173,19 +193,19 @@ async function main() {
   const projectId = project.data.project_id;
   pass(`Project: ${projectId}`);
 
-  const unit = await post<{ status: string; story_unit: { story_unit_id: string } }>(
-    `${BASE}/projects/${projectId}/units`,
-    {
-      projectId,
-      universeId,
-      title: "The Last Signal",
-      unitType: "film",
-      inUniversePeriod: "Present Day, 2026",
-      inUniverseDateStart: 2026,
-      inUniverseDateEnd: 2026,
-      releaseOrder: 1,
-    },
-  );
+  const unit = await post<{
+    status: string;
+    story_unit: { story_unit_id: string };
+  }>(`${BASE}/projects/${projectId}/units`, {
+    projectId,
+    universeId,
+    title: "The Last Signal",
+    unitType: "film",
+    inUniversePeriod: "Present Day, 2026",
+    inUniverseDateStart: 2026,
+    inUniverseDateEnd: 2026,
+    releaseOrder: 1,
+  });
   const unitId = unit.story_unit.story_unit_id;
   pass(`Story unit: ${unitId}`);
 
@@ -199,9 +219,17 @@ async function main() {
   banner("Step 3 — Wait for pipeline");
   console.log("  Polling...");
   const ingestion = await waitForIngestion(unitId);
-  check(ingestion.ingestion_status !== "failed", "Ingestion completed without fatal failure");
-  check(ingestion.failed_scenes.length === 0, "No failed scenes",
-    ingestion.failed_scenes.length > 0 ? `Failed: ${ingestion.failed_scenes.join(", ")}` : undefined);
+  check(
+    ingestion.ingestion_status !== "failed",
+    "Ingestion completed without fatal failure",
+  );
+  check(
+    ingestion.failed_scenes.length === 0,
+    "No failed scenes",
+    ingestion.failed_scenes.length > 0
+      ? `Failed: ${ingestion.failed_scenes.join(", ")}`
+      : undefined,
+  );
   check(ingestion.claim_count > 0, `Claims written: ${ingestion.claim_count}`);
 
   // ── 4. Per-scene claim count ──────────────────────────────────────────────
@@ -224,7 +252,10 @@ async function main() {
       failed_count++;
     }
   }
-  if (underfilled === 0) { pass(`All ${byScene.size} scenes have ≥2 claims`); passed++; }
+  if (underfilled === 0) {
+    pass(`All ${byScene.size} scenes have ≥2 claims`);
+    passed++;
+  }
 
   // ── 5. Blue Signal Case in archive at scene 1 ─────────────────────────────
   banner("Step 5 — Blue Signal Case in archive cabinet at scene 1");
@@ -232,10 +263,8 @@ async function main() {
     (c) =>
       c.source_scene_number === 1 &&
       (c.entity_name as string)?.toLowerCase().includes("signal") &&
-      (
-        (c.property as string)?.toLowerCase().includes("location") ||
-        (c.property as string)?.toLowerCase().includes("possession")
-      ),
+      ((c.property as string)?.toLowerCase().includes("location") ||
+        (c.property as string)?.toLowerCase().includes("possession")),
   );
   const caseInArchive = caseScene1.find((c) =>
     ["archive", "cabinet", "storage"].some((w) =>
@@ -258,9 +287,10 @@ async function main() {
       (c.entity_name as string)?.toLowerCase().includes("signal"),
   );
   const caseMissing = caseScene4.find((c) =>
-    ["gone", "missing", "absent", "empty"].some((w) =>
-      (c.value as string)?.toLowerCase().includes(w) ||
-      (c.property as string)?.toLowerCase().includes(w),
+    ["gone", "missing", "absent", "empty"].some(
+      (w) =>
+        (c.value as string)?.toLowerCase().includes(w) ||
+        (c.property as string)?.toLowerCase().includes(w),
     ),
   );
   check(
@@ -297,15 +327,19 @@ async function main() {
     (c) => c.source_scene_number === 10,
   );
   // Both characters claim the other took it — look for contradictory possession claims
-  const contradictionClaims = scene10Claims.filter((c) =>
-    (c.entity_name as string)?.toLowerCase().includes("signal") ||
-    (c.entity_name as string)?.toLowerCase().includes("elena") ||
-    (c.entity_name as string)?.toLowerCase().includes("marcus"),
+  const contradictionClaims = scene10Claims.filter(
+    (c) =>
+      (c.entity_name as string)?.toLowerCase().includes("signal") ||
+      (c.entity_name as string)?.toLowerCase().includes("elena") ||
+      (c.entity_name as string)?.toLowerCase().includes("marcus"),
   );
   check(
     contradictionClaims.length > 0,
     `Scene 10 has claims about case possession (${contradictionClaims.length} claim(s))`,
-    contradictionClaims.slice(0, 3).map((c) => `  [${c.entity_name}] ${c.property}="${c.value}"`).join("\n"),
+    contradictionClaims
+      .slice(0, 3)
+      .map((c) => `  [${c.entity_name}] ${c.property}="${c.value}"`)
+      .join("\n"),
   );
 
   // ── 9. Guardian within-unit pass ─────────────────────────────────────────
@@ -324,21 +358,33 @@ async function main() {
     };
   }>(`${BASE}/units/${unitId}/analyze`, {});
   check(guardianResp.status === "success", "Guardian pass succeeded");
-  check(guardianResp.data.findings_count > 0, `Guardian found ${guardianResp.data.findings_count} finding(s)`);
+  check(
+    guardianResp.data.findings_count > 0,
+    `Guardian found ${guardianResp.data.findings_count} finding(s)`,
+  );
 
   const findings = guardianResp.data.findings;
   for (const f of findings) {
-    info(`[${f.conflict_type.toUpperCase()}/${f.severity}] ${f.explanation.slice(0, 120)}`);
+    info(
+      `[${f.conflict_type.toUpperCase()}/${f.severity}] ${f.explanation.slice(0, 120)}`,
+    );
   }
 
   // ── 10. Case disappearance finding (scene 7→9) ────────────────────────────
   banner("Step 10 — Case disappearance finding (bench → gone)");
-  const caseFinding = findings.find((f) =>
-    f.explanation.toLowerCase().includes("signal") ||
-    f.explanation.toLowerCase().includes("case") ||
-    f.explanation.toLowerCase().includes("bench") ||
-    (f.claim_a as Record<string, unknown> | undefined)?.entity_name?.toString().toLowerCase().includes("signal") ||
-    (f.claim_b as Record<string, unknown> | undefined)?.entity_name?.toString().toLowerCase().includes("signal"),
+  const caseFinding = findings.find(
+    (f) =>
+      f.explanation.toLowerCase().includes("signal") ||
+      f.explanation.toLowerCase().includes("case") ||
+      f.explanation.toLowerCase().includes("bench") ||
+      (f.claim_a as Record<string, unknown> | undefined)?.entity_name
+        ?.toString()
+        .toLowerCase()
+        .includes("signal") ||
+      (f.claim_b as Record<string, unknown> | undefined)?.entity_name
+        ?.toString()
+        .toLowerCase()
+        .includes("signal"),
   );
   check(
     caseFinding !== undefined,
@@ -350,10 +396,17 @@ async function main() {
 
   // ── 11. Silver Key disappearance finding ──────────────────────────────────
   banner("Step 11 — Silver Key disappearance finding (scene 13→15)");
-  const keyFinding = findings.find((f) =>
-    f.explanation.toLowerCase().includes("key") ||
-    (f.claim_a as Record<string, unknown> | undefined)?.entity_name?.toString().toLowerCase().includes("key") ||
-    (f.claim_b as Record<string, unknown> | undefined)?.entity_name?.toString().toLowerCase().includes("key"),
+  const keyFinding = findings.find(
+    (f) =>
+      f.explanation.toLowerCase().includes("key") ||
+      (f.claim_a as Record<string, unknown> | undefined)?.entity_name
+        ?.toString()
+        .toLowerCase()
+        .includes("key") ||
+      (f.claim_b as Record<string, unknown> | undefined)?.entity_name
+        ?.toString()
+        .toLowerCase()
+        .includes("key"),
   );
   check(
     keyFinding !== undefined,
@@ -369,8 +422,12 @@ async function main() {
     `${BASE}/units/${unitId}/ask`,
     { question: "Where is the Blue Signal Case?", up_to_scene: 3 },
   );
-  check(q12.data?.epistemic_state === "known", `Epistemic state: ${q12.data?.epistemic_state} (expect known)`);
-  const q12mentionsArchive = q12.data?.answer?.toLowerCase().includes("archive") ||
+  check(
+    q12.data?.epistemic_state === "known",
+    `Epistemic state: ${q12.data?.epistemic_state} (expect known)`,
+  );
+  const q12mentionsArchive =
+    q12.data?.answer?.toLowerCase().includes("archive") ||
     q12.data?.answer?.toLowerCase().includes("cabinet");
   check(q12mentionsArchive, "Answer places case in archive/cabinet");
   info(`Answer: ${q12.data?.answer?.slice(0, 120)}`);
@@ -381,22 +438,27 @@ async function main() {
     { question: "Where is the Blue Signal Case?", up_to_scene: 8 },
   );
   check(
-    q13.data?.epistemic_state === "known" || q13.data?.epistemic_state === "partial",
+    q13.data?.epistemic_state === "known" ||
+      q13.data?.epistemic_state === "partial",
     `Epistemic state: ${q13.data?.epistemic_state} (expect known or partial)`,
   );
-  const q13mentionsStation = q13.data?.answer?.toLowerCase().includes("station") ||
+  const q13mentionsStation =
+    q13.data?.answer?.toLowerCase().includes("station") ||
     q13.data?.answer?.toLowerCase().includes("bench") ||
     q13.data?.answer?.toLowerCase().includes("inside");
   check(q13mentionsStation, "Answer places case inside the station");
   info(`Answer: ${q13.data?.answer?.slice(0, 120)}`);
 
-  banner("Step 14 — Companion: where is the Blue Signal Case at scene 10? (should be unknown)");
+  banner(
+    "Step 14 — Companion: where is the Blue Signal Case at scene 10? (should be unknown)",
+  );
   const q14 = await post<{ data: { answer: string; epistemic_state: string } }>(
     `${BASE}/units/${unitId}/ask`,
     { question: "Where is the Blue Signal Case?", up_to_scene: 10 },
   );
   check(
-    q14.data?.epistemic_state === "unknown" || q14.data?.epistemic_state === "partial",
+    q14.data?.epistemic_state === "unknown" ||
+      q14.data?.epistemic_state === "partial",
     `Epistemic state reflects uncertainty: ${q14.data?.epistemic_state}`,
   );
   info(`Answer: ${q14.data?.answer?.slice(0, 120)}`);
@@ -406,28 +468,47 @@ async function main() {
     `${BASE}/units/${unitId}/ask`,
     { question: "Who has the Silver Key?", up_to_scene: 10 },
   );
-  check(q15.data?.epistemic_state === "known", `Epistemic state: ${q15.data?.epistemic_state}`);
+  check(
+    q15.data?.epistemic_state === "known",
+    `Epistemic state: ${q15.data?.epistemic_state}`,
+  );
   const q15mentionsMarcus = q15.data?.answer?.toLowerCase().includes("marcus");
   check(q15mentionsMarcus, "Answer identifies Marcus as key holder");
   info(`Answer: ${q15.data?.answer?.slice(0, 120)}`);
 
-  banner("Step 16 — Companion: what happened to the Silver Key? (up to scene 15)");
+  banner(
+    "Step 16 — Companion: what happened to the Silver Key? (up to scene 15)",
+  );
   const q16 = await post<{ data: { answer: string; epistemic_state: string } }>(
     `${BASE}/units/${unitId}/ask`,
     { question: "What happened to the Silver Key?", up_to_scene: 15 },
   );
-  check(q16.data?.epistemic_state === "partial" || q16.data?.epistemic_state === "unknown",
-    `Epistemic state reflects gap: ${q16.data?.epistemic_state}`);
+  check(
+    q16.data?.epistemic_state === "partial" ||
+      q16.data?.epistemic_state === "unknown",
+    `Epistemic state reflects gap: ${q16.data?.epistemic_state}`,
+  );
   info(`Answer: ${q16.data?.answer?.slice(0, 200)}`);
 
-  banner("Step 17 — Companion: who took the Blue Signal Case? (up to scene 11)");
+  banner(
+    "Step 17 — Companion: who took the Blue Signal Case? (up to scene 11)",
+  );
   const q17 = await post<{ data: { answer: string; epistemic_state: string } }>(
     `${BASE}/units/${unitId}/ask`,
-    { question: "Who took the Blue Signal Case from the archive?", up_to_scene: 11 },
+    {
+      question: "Who took the Blue Signal Case from the archive?",
+      up_to_scene: 11,
+    },
   );
-  check(q17.data?.epistemic_state !== "unknown", `Epistemic state: ${q17.data?.epistemic_state}`);
+  check(
+    q17.data?.epistemic_state !== "unknown",
+    `Epistemic state: ${q17.data?.epistemic_state}`,
+  );
   const q17mentionsMarcus = q17.data?.answer?.toLowerCase().includes("marcus");
-  check(q17mentionsMarcus, "Answer identifies Marcus (confirmed by security footage)");
+  check(
+    q17mentionsMarcus,
+    "Answer identifies Marcus (confirmed by security footage)",
+  );
   info(`Answer: ${q17.data?.answer?.slice(0, 200)}`);
 
   // ── Final summary ─────────────────────────────────────────────────────────

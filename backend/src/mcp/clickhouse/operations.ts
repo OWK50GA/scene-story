@@ -359,12 +359,7 @@ function rowToProjectSummary(r: Record<string, unknown>): ProjectSummary {
 }
 
 export async function listProjects(): Promise<ProjectSummary[]> {
-  return select(
-    "listProjects",
-    Q.SELECT_PROJECTS,
-    {},
-    rowToProjectSummary,
-  );
+  return select("listProjects", Q.SELECT_PROJECTS, {}, rowToProjectSummary);
 }
 
 export async function getProjectSummary(

@@ -1,8 +1,8 @@
 /**
  * check-claims.ts — debug script, not part of the product.
- * 
+ *
  * Queries ClickHouse directly (bypassing MCP) to inspect claim state.
- * 
+ *
  * Usage:
  *   pnpm tsx scripts/check-claims.ts <story_unit_id>
  */
@@ -37,8 +37,12 @@ async function main() {
 
   console.log(`\nAll claims for unit ${storyUnitId} (${rows.length} total):\n`);
   for (const row of rows) {
-    const closed = row.valid_to_scene !== null ? ` → closed at scene ${row.valid_to_scene}` : "";
-    const superseded = Number(row.superseded_by_canon) === 1 ? " [SUPERSEDED]" : "";
+    const closed =
+      row.valid_to_scene !== null
+        ? ` → closed at scene ${row.valid_to_scene}`
+        : "";
+    const superseded =
+      Number(row.superseded_by_canon) === 1 ? " [SUPERSEDED]" : "";
     console.log(
       `  [${row.canonical_name}] ${row.property} = "${row.value}"  (from scene ${row.valid_from_scene}${closed})${superseded}`,
     );
@@ -73,7 +77,9 @@ async function main() {
   });
   const conflicts = await r2.json<Record<string, unknown>[]>();
 
-  console.log(`\nActive conflict candidates (Guardian input): ${conflicts.length}\n`);
+  console.log(
+    `\nActive conflict candidates (Guardian input): ${conflicts.length}\n`,
+  );
   for (const c of conflicts) {
     console.log(
       `  ${c.property}: "${c.value_a}" (scene ${c.scene_a}) vs "${c.value_b}" (scene ${c.scene_b})`,
