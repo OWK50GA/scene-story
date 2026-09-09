@@ -58,33 +58,46 @@ export async function streamFindingFix(
     throw new Error(body ? body : `Fix request failed (${response.status})`);
   }
 
-  for await (const block of readSseBlocks(response.body.getReader())) {
-    for (const line of block.split("\n")) {
-      if (!line.startsWith("data: ")) continue;
-      let payload: Record<string, unknown>;
-      try {
-        payload = JSON.parse(line.slice(6)) as Record<string, unknown>;
-      } catch {
-        continue;
-      }
-      switch (payload.type) {
-        case "meta":
-          callbacks.onMeta?.(payload as unknown as FixSseMeta);
-          break;
-        case "delta":
-          callbacks.onDelta(String(payload.text ?? ""));
-          break;
-        case "done":
-          callbacks.onDone?.({
-            scene: Number(payload.scene),
-            oldText: String(payload.oldText ?? ""),
-            newText: String(payload.newText ?? ""),
-          });
-          break;
-        case "error":
-          callbacks.onError?.(String(payload.message ?? "Fix failed"));
-          break;
+  const reader = response.body.getReader();
+  try {
+    for await (const block of readSseBlocks(reader)) {
+      for (const line of block.split("\n")) {
+        if (!line.startsWith("data: ")) continue;
+        let payload: Record<string, unknown>;
+        try {
+          payload = JSON.parse(line.slice(6)) as Record<string, unknown>;
+        } catch {
+          continue;
+        }
+        switch (payload.type) {
+          case "meta":
+            callbacks.onMeta?.({
+              unitId: String(payload.unitId ?? ""),
+              unitTitle: String(payload.unitTitle ?? ""),
+              findingId: String(payload.findingId ?? ""),
+              scene: Number(payload.scene),
+              claims: Array.isArray(payload.claims)
+                ? (payload.claims as FixSseMeta["claims"])
+                : [],
+            });
+            break;
+          case "delta":
+            callbacks.onDelta(String(payload.text ?? ""));
+            break;
+          case "done":
+            callbacks.onDone?.({
+              scene: Number(payload.scene),
+              oldText: String(payload.oldText ?? ""),
+              newText: String(payload.newText ?? ""),
+            });
+            break;
+          case "error":
+            callbacks.onError?.(String(payload.message ?? "Fix failed"));
+            break;
+        }
       }
     }
+  } finally {
+    await reader.cancel().catch(() => {});
   }
 }

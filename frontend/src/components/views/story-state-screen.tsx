@@ -185,6 +185,7 @@ export function StoryStateScreen() {
                     </TableCell>
                     <TableCell className="min-w-0 align-top">
                       <p
+                        title={row.value}
                         className={cn(
                           "break-words text-sm leading-snug",
                           !isExpanded && "line-clamp-2",

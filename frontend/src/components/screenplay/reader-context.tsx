@@ -108,25 +108,38 @@ export function ScreenplayReaderProvider({
         unitId,
         findingId,
         {
-          onDelta: (text) =>
+          onDelta: (text) => {
+            if (abortRef.current !== controller) return;
             setFix((previous) =>
               previous.status === "running"
                 ? { ...previous, text: previous.text + text }
                 : previous,
-            ),
-          onDone: ({ oldText, newText }) =>
+            );
+          },
+          onDone: ({ oldText, newText }) => {
+            if (abortRef.current !== controller) return;
             setFix({
               status: "done",
               findingId,
               scene,
               text: newText,
               oldText,
-            }),
-          onError: (message) =>
-            setFix({ status: "error", findingId, scene, text: "", message }),
+            });
+          },
+          onError: (message) => {
+            if (abortRef.current !== controller) return;
+            setFix({
+              status: "error",
+              findingId,
+              scene,
+              text: "",
+              message,
+            });
+          },
         },
         controller.signal,
       ).catch((err: unknown) => {
+        if (abortRef.current !== controller) return;
         if (err instanceof DOMException && err.name === "AbortError") {
           setFix({ status: "idle" });
           return;

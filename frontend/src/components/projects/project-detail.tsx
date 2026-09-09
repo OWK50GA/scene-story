@@ -88,7 +88,11 @@ export function ProjectDetail({ projectId }: { projectId: string }) {
     );
     let fileToUpload = input.file;
     if (input.sample) {
-      const text = await fetch(SAMPLE_URL).then((r) => r.text());
+      const response = await fetch(SAMPLE_URL);
+      if (!response.ok) {
+        throw new Error("Could not load the sample screenplay");
+      }
+      const text = await response.text();
       fileToUpload = new File([text], "the-voss-cipher.txt", {
         type: "text/plain",
       });

@@ -78,9 +78,11 @@ export function ProjectsHome() {
     mutationFn: async () => {
       const universeId = await ensureStudio();
       const project = await createProject(universeId, "The Voss Cipher");
-      const text = await fetch("/samples/the-voss-cipher.txt").then((r) =>
-        r.text(),
-      );
+      const response = await fetch("/samples/the-voss-cipher.txt");
+      if (!response.ok) {
+        throw new Error("Could not load the sample screenplay");
+      }
+      const text = await response.text();
       const unit = await createStoryUnit(
         project.projectId,
         universeId,
