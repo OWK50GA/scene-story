@@ -16,11 +16,10 @@ import {
   getClaim,
   getEntity,
   getStoryUnit,
-  getEntityHistory,
-  getEventsBetweenScenes,
   type WithinUnitConflictRow,
   type CrossUnitConflictRow,
 } from "../../mcp/clickhouse/operations.js";
+import { runQuery } from "../../mcp/clickhouse/http-client.js";
 import type {
   Claim,
   Event,
@@ -154,11 +153,48 @@ export async function buildEntityDossier(
   const sceneB = later.validFromScene;
 
   // ------------------------------------------------------------------
-  // Step 2 — Fetch the full entity history for focusEntity.
+  // Step 2 — Fetch the full entity history via official mcp-clickhouse.
+  //          The Guardian retrieves its story-memory evidence through the
+  //          MCP layer so Gemini reasons over MCP-sourced data.
   //          One network call; we filter it in memory for both
   //          propertyHistory and entityClaimsInWindow.
   // ------------------------------------------------------------------
-  const allEntityClaims = await getEntityHistory(candidate.universeEntityId);
+  const allEntityClaimsRaw = await runQuery<Record<string, unknown>>(
+    `SELECT
+       c.*,
+       su.title AS story_unit_title,
+       su.in_universe_period    AS su_in_universe_period,
+       su.in_universe_date_start AS su_in_universe_date_start,
+       su.release_order
+     FROM lmm.claims c
+     JOIN lmm.story_units su ON c.story_unit_id = su.story_unit_id
+     WHERE c.universe_entity_id = '${candidate.universeEntityId}'
+     ORDER BY su.in_universe_date_start NULLS LAST, su.release_order, c.valid_from_scene`,
+  );
+
+  const allEntityClaims: Claim[] = allEntityClaimsRaw.map((r) => ({
+    claimId: r.claim_id as string,
+    universeEntityId: r.universe_entity_id as string,
+    universeId: r.universe_id as string,
+    projectId: r.project_id as string,
+    storyUnitId: r.story_unit_id as string,
+    sourceSceneNumber: Number(r.source_scene_number),
+    property: r.property as string,
+    value: r.value as string,
+    inUniversePeriod: r.in_universe_period as string,
+    inUniverseDateStart: r.in_universe_date_start != null ? Number(r.in_universe_date_start) : null,
+    inUniverseDateEnd: r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
+    validFromScene: Number(r.valid_from_scene),
+    validToScene: r.valid_to_scene != null ? Number(r.valid_to_scene) : null,
+    sourceType: r.source_type as Claim["sourceType"],
+    confidence: Number(r.confidence),
+    confidenceRationale: r.confidence_rationale as string,
+    rawExtraction: r.raw_extraction as string,
+    sourceLine: r.source_line as string,
+    canonTier: Number(r.canon_tier) as Claim["canonTier"],
+    supersededByCanon: Number(r.superseded_by_canon) === 1,
+    supersedingClaimId: (r.superseding_claim_id as string | null) ?? null,
+  }));
 
   // Filter to this story unit only (getEntityHistory spans all units).
   const claimsForUnit = allEntityClaims.filter(
@@ -177,22 +213,35 @@ export async function buildEntityDossier(
 
   // ------------------------------------------------------------------
   // Step 3 — Fetch events involving the focus entity between the two
-  //          candidate scenes, then resolve all entity IDs to canonical
-  //          names so the prompt renderer never sees a UUID.
-  //
-  //          Strategy: collect the unique set of entity IDs referenced
-  //          across all filtered events, fetch them in parallel, build
-  //          a lookup map, then map each Event to a ResolvedEvent.
-  //
-  //          getEntity() is used per-ID. There is no bulk-by-IDs
-  //          operation in operations.ts. For a typical scene window
-  //          this is 2–6 unique entities — acceptable.
+  //          candidate scenes via official mcp-clickhouse.
+  //          Entity IDs are resolved to canonical names in-process.
   // ------------------------------------------------------------------
-  const allEventsInWindow = await getEventsBetweenScenes(
-    storyUnitId,
-    sceneA,
-    sceneB,
+  const allEventsRaw = await runQuery<Record<string, unknown>>(
+    `SELECT
+       ev.*,
+       e_sub.canonical_name AS subject_name,
+       e_obj.canonical_name AS object_name
+     FROM lmm.events ev
+     JOIN lmm.universe_entities e_sub ON ev.subject_entity_id = e_sub.entity_id
+     LEFT JOIN lmm.universe_entities e_obj ON ev.object_entity_id = e_obj.entity_id
+     WHERE ev.story_unit_id  = '${storyUnitId}'
+       AND ev.scene_number  >= ${sceneA}
+       AND ev.scene_number  <= ${sceneB}
+     ORDER BY ev.scene_number`,
   );
+
+  const allEventsInWindow: Event[] = allEventsRaw.map((r) => ({
+    eventId: r.event_id as string,
+    storyUnitId: r.story_unit_id as string,
+    projectId: r.project_id as string,
+    universeId: r.universe_id as string,
+    sceneNumber: Number(r.scene_number),
+    subjectEntityId: r.subject_entity_id as string,
+    action: r.action as string,
+    objectEntityId: (r.object_entity_id as string | null) ?? null,
+    description: r.description as string,
+    inUniversePeriod: r.in_universe_period as string,
+  }));
 
   const filteredEvents = allEventsInWindow.filter(
     (e) =>
@@ -318,11 +367,46 @@ export async function buildCrossUnitDossier(
     : [claimB, claimA, unitB, unitA];
 
   // ------------------------------------------------------------------
-  // Step 2 — Full property history across both units.
+  // Step 2 — Full property history across both units via mcp-clickhouse.
   //          getEntityHistory returns all claims across all units,
   //          ordered by in-universe date + release_order + scene.
   // ------------------------------------------------------------------
-  const allEntityClaims = await getEntityHistory(candidate.universeEntityId);
+  const allEntityClaimsRaw2 = await runQuery<Record<string, unknown>>(
+    `SELECT
+       c.*,
+       su.title AS story_unit_title,
+       su.in_universe_period    AS su_in_universe_period,
+       su.in_universe_date_start AS su_in_universe_date_start,
+       su.release_order
+     FROM lmm.claims c
+     JOIN lmm.story_units su ON c.story_unit_id = su.story_unit_id
+     WHERE c.universe_entity_id = '${candidate.universeEntityId}'
+     ORDER BY su.in_universe_date_start NULLS LAST, su.release_order, c.valid_from_scene`,
+  );
+
+  const allEntityClaims: Claim[] = allEntityClaimsRaw2.map((r) => ({
+    claimId: r.claim_id as string,
+    universeEntityId: r.universe_entity_id as string,
+    universeId: r.universe_id as string,
+    projectId: r.project_id as string,
+    storyUnitId: r.story_unit_id as string,
+    sourceSceneNumber: Number(r.source_scene_number),
+    property: r.property as string,
+    value: r.value as string,
+    inUniversePeriod: r.in_universe_period as string,
+    inUniverseDateStart: r.in_universe_date_start != null ? Number(r.in_universe_date_start) : null,
+    inUniverseDateEnd: r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
+    validFromScene: Number(r.valid_from_scene),
+    validToScene: r.valid_to_scene != null ? Number(r.valid_to_scene) : null,
+    sourceType: r.source_type as Claim["sourceType"],
+    confidence: Number(r.confidence),
+    confidenceRationale: r.confidence_rationale as string,
+    rawExtraction: r.raw_extraction as string,
+    sourceLine: r.source_line as string,
+    canonTier: Number(r.canon_tier) as Claim["canonTier"],
+    supersededByCanon: Number(r.superseded_by_canon) === 1,
+    supersedingClaimId: (r.superseding_claim_id as string | null) ?? null,
+  }));
 
   const propertyHistory = allEntityClaims
     .filter((c) => c.property === candidate.property)
@@ -362,22 +446,48 @@ export async function buildCrossUnitDossier(
   });
 
   // ------------------------------------------------------------------
-  // Step 3 — Events from both units, resolved to canonical names.
+  // Step 3 — Events from both units via official mcp-clickhouse.
   //          earlierUnit: from sceneA to end of that unit
   //          laterUnit: from start (scene 0) to sceneB
   // ------------------------------------------------------------------
-  const [earlierUnitEvents, laterUnitEvents] = await Promise.all([
-    getEventsBetweenScenes(
-      earlierUnit.storyUnitId,
-      earlier.validFromScene,
-      earlierUnit.sceneCount,
+  const eventSql = (unitId: string, fromScene: number, toScene: number) =>
+    `SELECT
+       ev.*,
+       e_sub.canonical_name AS subject_name,
+       e_obj.canonical_name AS object_name
+     FROM lmm.events ev
+     JOIN lmm.universe_entities e_sub ON ev.subject_entity_id = e_sub.entity_id
+     LEFT JOIN lmm.universe_entities e_obj ON ev.object_entity_id = e_obj.entity_id
+     WHERE ev.story_unit_id  = '${unitId}'
+       AND ev.scene_number  >= ${fromScene}
+       AND ev.scene_number  <= ${toScene}
+     ORDER BY ev.scene_number`;
+
+  const mapEventRows = (rows: Record<string, unknown>[]): Event[] =>
+    rows.map((r) => ({
+      eventId: r.event_id as string,
+      storyUnitId: r.story_unit_id as string,
+      projectId: r.project_id as string,
+      universeId: r.universe_id as string,
+      sceneNumber: Number(r.scene_number),
+      subjectEntityId: r.subject_entity_id as string,
+      action: r.action as string,
+      objectEntityId: (r.object_entity_id as string | null) ?? null,
+      description: r.description as string,
+      inUniversePeriod: r.in_universe_period as string,
+    }));
+
+  const [earlierUnitEventsRaw, laterUnitEventsRaw] = await Promise.all([
+    runQuery<Record<string, unknown>>(
+      eventSql(earlierUnit.storyUnitId, earlier.validFromScene, earlierUnit.sceneCount),
     ),
-    getEventsBetweenScenes(
-      laterUnit.storyUnitId,
-      0,
-      later.validFromScene,
+    runQuery<Record<string, unknown>>(
+      eventSql(laterUnit.storyUnitId, 0, later.validFromScene),
     ),
   ]);
+
+  const earlierUnitEvents = mapEventRows(earlierUnitEventsRaw);
+  const laterUnitEvents = mapEventRows(laterUnitEventsRaw);
 
   const focusId = candidate.universeEntityId;
 
