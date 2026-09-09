@@ -4,6 +4,8 @@ import {
   getFindingsForProjectHttp,
   getStoryUnitsForProjectHttp,
   patchFindingStatusHttp,
+  getProjectHttp,
+  listProjectsHttp,
 } from "../controllers/projects.js";
 import { createStoryUnitHttp } from "../controllers/units.js";
 
@@ -110,6 +112,8 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+router.get("/", listProjectsHttp);
+router.get("/:id", getProjectHttp);
 router.post("/:id/units", createStoryUnitHttp);
 
 /**
