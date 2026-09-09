@@ -141,3 +141,134 @@ The demo uses a purpose-written screenplay of 12–15 scenes with 3 named charac
 **Filmmaker loop:** upload the screenplay → watch the Story Analyst process it → see the Story State fill with claims → ask the Continuity Guardian to check for problems → see it identify the planted contradiction with full citations and the gap between the two conflicting claims.
 
 **Viewer loop:** ask a question about the story at a scene number before the answer is established → system says it cannot answer yet → advance the scene number past where the answer is established → ask the same question → system answers correctly from within the spoiler boundary.
+
+---
+
+## Deployment (Google Cloud Run)
+
+Both services run as Cloud Run services in the `europe-west2` region of the `living-movie-memory` project:
+
+- `scenestory-api` (backend, Express on port 8080)
+- `scenestory-web` (frontend, Next.js standalone)
+
+```
+Web browser ──► scenestory-web (Cloud Run)
+                     │  /api/* proxied server-side
+                     ▼
+               scenestory-api (Cloud Run)
+                     │
+                     ▼
+        ClickHouse Cloud  +  Gemini API
+```
+
+### Prerequisites
+
+- Google Cloud CLI (`gcloud`) installed and authenticated. The repo being public does not grant access to the `living-movie-memory` project; you need an account with Cloud Run Admin, Artifact Registry Admin, Cloud Build Editor, and Secret Manager Admin (or Owner).
+- `pnpm` locally, to run the migration script.
+- A local `backend/.env`. It is gitignored, so clone it from `backend/.env.example` and fill in the values (ask a maintainer for the ClickHouse credentials and Gemini API key if you do not have them). The deploy commands reference these values.
+
+### Runtime environment
+
+| Where | What |
+|---|---|
+| Env vars (plain) | `CLICKHOUSE_HOST`, `CLICKHOUSE_PORT`, `CLICKHOUSE_USERNAME`, `CLICKHOUSE_DATABASE`, `NODE_ENV` |
+| Secret Manager | `GEMINI_API_KEY`, `CLICKHOUSE_PASSWORD` (referenced as env vars on the service) |
+| Docker build arg | `BACKEND_URL` (frontend only, baked into the rewrite at build time) |
+
+### One-time setup
+
+The shared `living-movie-memory` project is already provisioned, so on an existing environment **skip every step that already exists** (the commands below error out if you rerun them). They are only needed for a brand-new project:
+
+```bash
+gcloud config set project living-movie-memory
+gcloud auth login
+
+# Enable APIs
+gcloud services enable artifactregistry.googleapis.com run.googleapis.com secretmanager.googleapis.com cloudbuild.googleapis.com
+
+# Artifact Registry repo
+gcloud artifacts repositories create scene-story --repository-format=docker --location=europe-west2
+
+# Secrets (values come from your local backend/.env)
+printf %s "$GEMINI_API_KEY" | gcloud secrets create GEMINI_API_KEY --data-file=-
+printf %s "$CLICKHOUSE_PASSWORD" | gcloud secrets create CLICKHOUSE_PASSWORD --data-file=-
+
+# Allow the Cloud Run service account to read secrets
+gcloud projects add-iam-policy-binding living-movie-memory \
+  --member=serviceAccount:<PROJECT_NUMBER>-compute@developer.gserviceaccount.com \
+  --role=roles/secretmanager.secretAccessor
+```
+
+### Deploy the backend
+
+`CLICKHOUSE_HOST` below is a placeholder: fill it (and any other ClickHouse values) from your `backend/.env`.
+
+```bash
+gcloud builds submit backend \
+  --tag europe-west2-docker.pkg.dev/living-movie-memory/scene-story/backend:latest
+
+gcloud run deploy scenestory-api \
+  --image=europe-west2-docker.pkg.dev/living-movie-memory/scene-story/backend:latest \
+  --region=europe-west2 --allow-unauthenticated \
+  --cpu=1 --memory=1Gi --min-instances=0 --max-instances=5 \
+  --set-env-vars=NODE_ENV=production,CLICKHOUSE_HOST=...,CLICKHOUSE_PORT=8443,CLICKHOUSE_USERNAME=default,CLICKHOUSE_DATABASE=lmm \
+  --set-secrets=GEMINI_API_KEY=GEMINI_API_KEY:latest,CLICKHOUSE_PASSWORD=CLICKHOUSE_PASSWORD:latest
+```
+
+### Migrations
+
+Schema is bootstrapped by a migration script, not by the server:
+
+```bash
+cd backend && pnpm exec tsx scripts/migrate.ts
+```
+
+What it does:
+
+- Connects to the ClickHouse instance configured by your environment (`CLICKHOUSE_HOST` etc., read from `backend/.env` locally or env vars elsewhere).
+- Creates the database if missing, then runs the table DDLs from `backend/src/mcp/clickhouse/queries.ts` (`DDL_TABLES_IN_ORDER`) in dependency order.
+- Every statement is `CREATE ... IF NOT EXISTS`. It never drops or alters existing tables, so it is safe to re-run any time.
+
+When to run it:
+
+- Once after ClickHouse is provisioned.
+- Once against any new environment (the deployed backend and a local dev box currently share the same ClickHouse Cloud instance and `lmm` database, so prod is already migrated).
+- Any time new tables are added to `DDL_TABLES_IN_ORDER`.
+
+Limits to know:
+
+- It only creates tables. Changing the shape of an existing table is not handled by the script, so add the `ALTER` manually (for example via the ClickHouse console) and keep the DDL list in sync.
+- It is not run automatically by CI/CD or at server boot, so a deploy that adds a table needs this step run first (the backend tolerates a missing table by failing that specific operation, but the pipeline will not work until the table exists).
+
+### Deploy the frontend
+
+The frontend bakes `BACKEND_URL` into its `/api` rewrite at build time. Deploy the backend first, then pass its URL here.
+
+```bash
+gcloud builds submit frontend --config frontend/cloudbuild.yaml \
+  --substitutions=_BACKEND_URL=https://scenestory-api-<PROJECT_NUMBER>.europe-west2.run.app
+
+gcloud run deploy scenestory-web \
+  --image=europe-west2-docker.pkg.dev/living-movie-memory/scene-story/frontend:latest \
+  --region=europe-west2 --allow-unauthenticated \
+  --cpu=1 --memory=1Gi --min-instances=0 --max-instances=5
+```
+
+### Redeploying after code changes
+
+There is no auto-deploy yet. Push to the repo, then rerun the two `gcloud builds submit` + `gcloud run deploy` blocks above. The backend service URL is stable across deploys, so the frontend only needs a rebuild when its code changed (or when the API service is recreated). Cloud Run keeps every revision, so a bad deploy rolls back with `gcloud run revisions` in the console.
+
+### Smoke check
+
+```bash
+curl https://scenestory-api-<PROJECT_NUMBER>.europe-west2.run.app/health
+curl https://scenestory-web-<PROJECT_NUMBER>.europe-west2.run.app/api/universes
+```
+
+### Containers
+
+- `backend/Dockerfile`: multi-stage (`pnpm install` → `tsc` build → `node dist/index.js`). Production runtime is CommonJS: do not add `"type": "module"` back to `backend/package.json`.
+- `frontend/Dockerfile`: multi-stage Next.js standalone build (`output: "standalone"`), runs `node server.js`.
+- `.dockerignore` in each service dir excludes `.env`, secrets, and local artifacts. Keep any service account JSON out of the image.
+- `frontend/cloudbuild.yaml` builds the frontend with the `BACKEND_URL` build arg.
+- The backend lockfile must stay compatible with pnpm 11 (CI runs pnpm 11 via `pnpm/action-setup`). Regenerate it with pnpm 11 if it ever changes.
