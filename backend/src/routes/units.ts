@@ -3,6 +3,7 @@ import {
   analyzeStoryUnitHttp,
   askStoryUnitHttp,
   createStoryUnitHttp,
+  fixFindingHttp,
   getIngestionStatusHttp,
   getIngestionStatusStreamHttp,
   getScenesForUnitHttp,
@@ -357,6 +358,7 @@ router.get("/:id/ingest-stream", getIngestionStatusStreamHttp);
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post("/:id/analyze", analyzeStoryUnitHttp);
+router.post("/:id/findings/:findingId/fix", fixFindingHttp);
 
 /**
  * @swagger
