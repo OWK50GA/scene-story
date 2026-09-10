@@ -71,8 +71,11 @@ export async function uploadScreenplay(
 
 function extToMimeType(ext: string): string {
   switch (ext.toLowerCase()) {
-    case "pdf": return "application/pdf";
-    case "fountain": return "text/plain";
-    default: return "text/plain";
+    case "pdf":
+      return "application/pdf";
+    case "fountain":
+      return "text/plain";
+    default:
+      return "text/plain";
   }
 }

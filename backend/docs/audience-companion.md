@@ -34,6 +34,7 @@ The Companion has nine explicit abilities. These are encoded in the system promp
 They are product behaviour — they do not map one-to-one to code structures.
 
 ### 1. Entity/object explanation
+
 "Who is Hartley?", "What is the Cipher Device?", "What do we know about the
 Red Ledger?"
 
@@ -42,10 +43,12 @@ implied, inferred). Only explain what has been established at or before the
 current scene boundary.
 
 ### 2. Relationship explanation
+
 "What is Clara's relationship with Hartley?", "How does Meinhardt know Clara?"
 
 Answer from claims and events that establish relationships between entities.
 The answer must distinguish between:
+
 - **explicitly established** — a scene states the relationship directly
 - **reasonably implied** — the evidence strongly suggests it but doesn't state it
 - **not established** — the screenplay has not addressed this
@@ -56,6 +59,7 @@ trusts Hartley" + "Clara gives Hartley access to the fragment" are established
 facts. The relationship between those facts is for the reader to draw.
 
 ### 3. Causal/story explanation
+
 "Why did Clara come here?", "How did they get the device?", "What caused this?"
 
 This is probably the most valuable ability and the most technically demanding.
@@ -72,12 +76,14 @@ This ability requires historical facts (the full claim chain) and events, not
 just the current state. See the Historical mode section below.
 
 ### 4. Current-state questions
+
 "Where is the Cipher Device?", "Who has the Red Ledger?", "What does Hartley know?"
 
 Answer from the latest established claim per property per entity at the boundary.
 Cite the scene number where the current state was established.
 
 ### 5. "What do we know so far"
+
 "What do we know about the Cipher Device so far?"
 
 Different from ability 1. This asks for an aggregate picture across all
@@ -86,6 +92,7 @@ should present all known properties — location, key count, activation mechanis
 physical description — grouped coherently.
 
 ### 6. Catch-up
+
 "Catch me up.", "Catch me up from scene 4 to scene 9."
 
 The Companion summarises the important developments between two scene points,
@@ -96,6 +103,7 @@ the reader know to continue from scene N?
 This ability requires summary mode (all events + high-confidence claims).
 
 ### 7. What should I remember
+
 "What should I remember before continuing?"
 
 Subtly different from catch-up. The Companion identifies the small set of story
@@ -107,6 +115,7 @@ in multiple events are likely load-bearing. The system prompt instructs Gemini
 to identify these.
 
 ### 8. Clarification/ambiguity
+
 "The screenplay hasn't established that yet."
 "We know Hartley knows the location, but not how he learned it."
 
@@ -118,6 +127,7 @@ epistemic states — known, partial, unknown — are not error conditions. They 
 first-class response states. The system prompt dedicates a section to this.
 
 ### 9. Evidence
+
 Every answer populates `factsUsed` with the IDs of the specific facts from the
 pack that support each statement. The frontend can use these IDs to link back to
 the source screenplay line via the `sourceLine` field on each `PackFact`.
@@ -199,12 +209,14 @@ Serving all nine abilities with a single deduplicated current-state context
 would break abilities 3, 6, and 7 — the most compelling demo moments.
 
 ### Current-state mode (default)
+
 Triggered by: anything not matching historical or summary triggers.
 
 Context: deduplicated latest claim per entity+property (`isHistorical: false`
 on all facts). Fast. Used for abilities 1, 4, 5.
 
 ### Historical mode
+
 Triggered by: "how", "why", "what caused", "how did", "when did", "where did",
 "what happened to"
 
@@ -212,6 +224,7 @@ Context: full claim chain including superseded claims (`isHistorical: true` on
 superseded facts), plus events for resolved entities with one-hop expansion.
 
 Entity resolution from the question text:
+
 1. Lowercase the question
 2. Match against `canonicalName` and `aliases` for each entity in the boundary
 3. If no matches: fall back to all entities in the boundary
@@ -223,13 +236,15 @@ event) are included. One hop is sufficient for v1 — a full graph traversal wou
 over-expand for the hackathon target.
 
 ### Summary mode
+
 Triggered by: "catch me up", "what should i remember", "what do we know",
 "so far", "everything about", "tell me about", "remind me"
 
 Summary triggers are checked before historical triggers. They are more specific.
 
 Context: all events within the boundary + all claims with `confidence >= 0.75`
-+ scene digests. No deduplication. Used for abilities 6 and 7.
+
+- scene digests. No deduplication. Used for abilities 6 and 7.
 
 ---
 
@@ -249,10 +264,12 @@ Format principle: events first (what happened), significant state changes second
 discovery or a revealed fact rather than a character action.
 
 Good example:
+
 > Scene 6: Clara places the Cipher Device in the safe. The device's location
 > changes to the safe. Meinhardt orders everyone not to move it.
 
 Bad example:
+
 > Scene 6: Clara secretly protects the device because she no longer trusts
 > Meinhardt.
 

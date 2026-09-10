@@ -210,6 +210,7 @@ sequential candidate loop with `Promise.allSettled()`.
 ### Implementation sketch
 
 Current (sequential):
+
 ```typescript
 for (const candidate of candidates) {
   const dossier = await buildEntityDossier(candidate, storyUnitId);
@@ -219,6 +220,7 @@ for (const candidate of candidates) {
 ```
 
 Parallel target:
+
 ```typescript
 const results = await Promise.allSettled(
   candidates.map(async (candidate) => {
@@ -226,14 +228,18 @@ const results = await Promise.allSettled(
     const verdict = await reasonAboutDossier(dossier, "within_unit");
     await applyVerdict(verdict, candidate);
     return verdict;
-  })
+  }),
 );
 
 // Log failures without halting
 for (const result of results) {
   if (result.status === "rejected") {
-    log({ agent: "guardian", eventType: "candidate_error", status: "failure",
-          detail: { reason: String(result.reason) } });
+    log({
+      agent: "guardian",
+      eventType: "candidate_error",
+      status: "failure",
+      detail: { reason: String(result.reason) },
+    });
   }
 }
 ```
@@ -298,15 +304,18 @@ the window contributes no explanatory information and can be excluded.
 
 ```typescript
 // Only include properties with >1 distinct value in the scene window
-const changedProperties = entityClaims
-  .reduce((acc, claim) => {
+const changedProperties = entityClaims.reduce(
+  (acc, claim) => {
     acc[claim.property] = acc[claim.property] ?? new Set();
     acc[claim.property].add(claim.value);
     return acc;
-  }, {} as Record<string, Set<string>>);
+  },
+  {} as Record<string, Set<string>>,
+);
 
 const relevantClaims = entityClaims.filter(
-  c => changedProperties[c.property]!.size > 1 || c.property === candidateProperty
+  (c) =>
+    changedProperties[c.property]!.size > 1 || c.property === candidateProperty,
 );
 ```
 
@@ -360,6 +369,7 @@ A new function `mergeFindings(findings[])` in
 `writeFinding` is called for any result.
 
 This requires either:
+
 - a schema change to `continuity_findings` (add `group_id Nullable(String)`)
 - or a separate `finding_groups` table if grouping metadata is rich
 

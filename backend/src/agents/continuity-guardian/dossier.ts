@@ -35,7 +35,10 @@ import type {
 // The prompt renderer works entirely with names — IDs are useless to Gemini.
 // ---------------------------------------------------------------------------
 
-export type ResolvedEvent = Omit<Event, "subjectEntityId" | "objectEntityId"> & {
+export type ResolvedEvent = Omit<
+  Event,
+  "subjectEntityId" | "objectEntityId"
+> & {
   subjectName: string;
   objectName: string | null;
 };
@@ -182,8 +185,12 @@ export async function buildEntityDossier(
     property: r.property as string,
     value: r.value as string,
     inUniversePeriod: r.in_universe_period as string,
-    inUniverseDateStart: r.in_universe_date_start != null ? Number(r.in_universe_date_start) : null,
-    inUniverseDateEnd: r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
+    inUniverseDateStart:
+      r.in_universe_date_start != null
+        ? Number(r.in_universe_date_start)
+        : null,
+    inUniverseDateEnd:
+      r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
     validFromScene: Number(r.valid_from_scene),
     validToScene: r.valid_to_scene != null ? Number(r.valid_to_scene) : null,
     sourceType: r.source_type as Claim["sourceType"],
@@ -282,10 +289,14 @@ export async function buildEntityDossier(
     objectEntityId: e.objectEntityId,
     description: e.description,
     inUniversePeriod: e.inUniversePeriod,
-    subjectName: nameById.get(e.subjectEntityId) ?? `unknown(${e.subjectEntityId.slice(0, 8)})`,
-    objectName: e.objectEntityId !== null
-      ? (nameById.get(e.objectEntityId) ?? `unknown(${e.objectEntityId.slice(0, 8)})`)
-      : null,
+    subjectName:
+      nameById.get(e.subjectEntityId) ??
+      `unknown(${e.subjectEntityId.slice(0, 8)})`,
+    objectName:
+      e.objectEntityId !== null
+        ? (nameById.get(e.objectEntityId) ??
+          `unknown(${e.objectEntityId.slice(0, 8)})`)
+        : null,
   }));
 
   // ------------------------------------------------------------------
@@ -394,8 +405,12 @@ export async function buildCrossUnitDossier(
     property: r.property as string,
     value: r.value as string,
     inUniversePeriod: r.in_universe_period as string,
-    inUniverseDateStart: r.in_universe_date_start != null ? Number(r.in_universe_date_start) : null,
-    inUniverseDateEnd: r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
+    inUniverseDateStart:
+      r.in_universe_date_start != null
+        ? Number(r.in_universe_date_start)
+        : null,
+    inUniverseDateEnd:
+      r.in_universe_date_end != null ? Number(r.in_universe_date_end) : null,
     validFromScene: Number(r.valid_from_scene),
     validToScene: r.valid_to_scene != null ? Number(r.valid_to_scene) : null,
     sourceType: r.source_type as Claim["sourceType"],
@@ -434,16 +449,15 @@ export async function buildCrossUnitDossier(
       c.validFromScene <= later.validFromScene,
   );
 
-  const entityClaimsInWindow = [
-    ...earlierUnitClaims,
-    ...laterUnitClaims,
-  ].sort((a, b) => {
-    // Group by unit first (earlier unit before later), then by scene.
-    if (a.storyUnitId !== b.storyUnitId) {
-      return a.storyUnitId === earlierUnit.storyUnitId ? -1 : 1;
-    }
-    return a.validFromScene - b.validFromScene;
-  });
+  const entityClaimsInWindow = [...earlierUnitClaims, ...laterUnitClaims].sort(
+    (a, b) => {
+      // Group by unit first (earlier unit before later), then by scene.
+      if (a.storyUnitId !== b.storyUnitId) {
+        return a.storyUnitId === earlierUnit.storyUnitId ? -1 : 1;
+      }
+      return a.validFromScene - b.validFromScene;
+    },
+  );
 
   // ------------------------------------------------------------------
   // Step 3 — Events from both units via official mcp-clickhouse.
@@ -479,7 +493,11 @@ export async function buildCrossUnitDossier(
 
   const [earlierUnitEventsRaw, laterUnitEventsRaw] = await Promise.all([
     runQuery<Record<string, unknown>>(
-      eventSql(earlierUnit.storyUnitId, earlier.validFromScene, earlierUnit.sceneCount),
+      eventSql(
+        earlierUnit.storyUnitId,
+        earlier.validFromScene,
+        earlierUnit.sceneCount,
+      ),
     ),
     runQuery<Record<string, unknown>>(
       eventSql(laterUnit.storyUnitId, 0, later.validFromScene),

@@ -15,7 +15,9 @@ const storyUnitId = process.argv[2];
 const universeId = process.argv[3];
 
 if (!storyUnitId || !universeId) {
-  console.error("Usage: pnpm tsx scripts/debug-guardian.ts <story_unit_id> <universe_id>");
+  console.error(
+    "Usage: pnpm tsx scripts/debug-guardian.ts <story_unit_id> <universe_id>",
+  );
   process.exit(1);
 }
 
@@ -66,24 +68,35 @@ async function main() {
   console.log("═".repeat(60));
   console.log("1. ALL CLAIMS (direct ClickHouse)");
   console.log("═".repeat(60));
-  const claimsResult = await ch.query({ query: ALL_CLAIMS_SQL, format: "JSONEachRow" });
+  const claimsResult = await ch.query({
+    query: ALL_CLAIMS_SQL,
+    format: "JSONEachRow",
+  });
   const claims = await claimsResult.json<Record<string, unknown>[]>();
   console.log(`Total claims: ${claims.length}`);
   for (const c of claims) {
-    const closed = c.valid_to_scene !== null ? ` → CLOSED at scene ${c.valid_to_scene}` : "";
+    const closed =
+      c.valid_to_scene !== null ? ` → CLOSED at scene ${c.valid_to_scene}` : "";
     const sup = Number(c.superseded_by_canon) === 1 ? " [SUPERSEDED]" : "";
-    console.log(`  [${c.canonical_name}] ${c.property} = "${c.value}" (from scene ${c.valid_from_scene})${closed}${sup}`);
+    console.log(
+      `  [${c.canonical_name}] ${c.property} = "${c.value}" (from scene ${c.valid_from_scene})${closed}${sup}`,
+    );
   }
 
   // ── 2. Direct ClickHouse — conflict candidates ────────────────────────────
   console.log("\n" + "═".repeat(60));
   console.log("2. CONFLICT CANDIDATES (direct ClickHouse)");
   console.log("═".repeat(60));
-  const conflictResult = await ch.query({ query: CONFLICT_SQL, format: "JSONEachRow" });
+  const conflictResult = await ch.query({
+    query: CONFLICT_SQL,
+    format: "JSONEachRow",
+  });
   const conflicts = await conflictResult.json<Record<string, unknown>[]>();
   console.log(`Candidates found: ${conflicts.length}`);
   for (const c of conflicts) {
-    console.log(`  [${c.property}] scene ${c.scene_a}: "${c.value_a}" vs scene ${c.scene_b}: "${c.value_b}"`);
+    console.log(
+      `  [${c.property}] scene ${c.scene_a}: "${c.value_a}" vs scene ${c.scene_b}: "${c.value_b}"`,
+    );
   }
 
   // ── 3. Via MCP — raw response ────────────────────────────────────────────
@@ -91,12 +104,18 @@ async function main() {
   console.log("3. CONFLICT CANDIDATES (via MCP — raw)");
   console.log("═".repeat(60));
   try {
-    const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
-    const { SSEClientTransport } = await import("@modelcontextprotocol/sdk/client/sse.js");
+    const { Client } =
+      await import("@modelcontextprotocol/sdk/client/index.js");
+    const { SSEClientTransport } =
+      await import("@modelcontextprotocol/sdk/client/sse.js");
 
-    const mcpUrl = process.env.CLICKHOUSE_MCP_URL ?? "http://localhost:8000/sse";
+    const mcpUrl =
+      process.env.CLICKHOUSE_MCP_URL ?? "http://localhost:8000/sse";
     const transport = new SSEClientTransport(new URL(mcpUrl));
-    const client = new Client({ name: "debug", version: "1.0.0" }, { capabilities: {} });
+    const client = new Client(
+      { name: "debug", version: "1.0.0" },
+      { capabilities: {} },
+    );
     await client.connect(transport);
     console.log("MCP connected");
 
@@ -108,7 +127,9 @@ async function main() {
     console.log("Raw MCP result:");
     console.log(JSON.stringify(result, null, 2));
   } catch (err) {
-    console.error(`MCP error: ${err instanceof Error ? err.message : String(err)}`);
+    console.error(
+      `MCP error: ${err instanceof Error ? err.message : String(err)}`,
+    );
   }
 }
 

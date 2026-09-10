@@ -495,7 +495,9 @@ export function buildDossierPrompt(dossier: EntityDossier): string {
   lines.push("════════════════════════════════════════════════════════════");
   lines.push("INVESTIGATION");
   lines.push("════════════════════════════════════════════════════════════");
-  lines.push(`Entity:      ${focusEntity.canonicalName} (${focusEntity.entityType})`);
+  lines.push(
+    `Entity:      ${focusEntity.canonicalName} (${focusEntity.entityType})`,
+  );
   lines.push(`Property:    ${candidateProperty}`);
   lines.push(`Story unit:  ${storyUnit.title}`);
   lines.push(`Period:      ${storyUnit.inUniversePeriod}`);
@@ -547,9 +549,7 @@ export function buildDossierPrompt(dossier: EntityDossier): string {
   lines.push(
     `All recorded claims about ${focusEntity.canonicalName} across every property`,
   );
-  lines.push(
-    "in the scene window. Use this for cross-property reasoning.",
-  );
+  lines.push("in the scene window. Use this for cross-property reasoning.");
   lines.push("");
 
   if (entityClaimsInWindow.length === 0) {
@@ -587,9 +587,7 @@ export function buildDossierPrompt(dossier: EntityDossier): string {
   lines.push("");
 
   if (relevantEvents.length === 0) {
-    lines.push(
-      "(no events involving this entity found in this scene window)",
-    );
+    lines.push("(no events involving this entity found in this scene window)");
     lines.push(
       "Note: absence of a recorded event does not prove no event occurred.",
     );
@@ -637,7 +635,9 @@ function renderClaim(claim: Claim, label: string): string {
  */
 function renderHistoryRow(claim: Claim): string {
   const closed =
-    claim.validToScene !== null ? ` [closed at scene ${claim.validToScene}]` : "";
+    claim.validToScene !== null
+      ? ` [closed at scene ${claim.validToScene}]`
+      : "";
   return (
     `Scene ${claim.validFromScene}: "${claim.value}"` +
     ` (${claim.sourceType}, ${claim.confidence.toFixed(2)})` +

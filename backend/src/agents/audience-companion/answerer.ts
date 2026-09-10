@@ -47,9 +47,7 @@ function makeFallbackAnswer(
       "I wasn't able to process that question right now. Please try again.",
     epistemicState: "unknown",
     factsUsed: [],
-    notKnownAspects: [
-      `Companion reasoning failed: ${detail}`,
-    ],
+    notKnownAspects: [`Companion reasoning failed: ${detail}`],
     boundary,
     boundaryEnforced: true,
   };
@@ -133,10 +131,7 @@ export async function answerQuestion(
 export async function callGemini(userTurn: string): Promise<string> {
   const timeoutPromise = new Promise<never>((_, reject) =>
     setTimeout(
-      () =>
-        reject(
-          new Error(`Gemini request timed out after ${TIMEOUT_MS}ms`),
-        ),
+      () => reject(new Error(`Gemini request timed out after ${TIMEOUT_MS}ms`)),
       TIMEOUT_MS,
     ),
   );
@@ -150,7 +145,11 @@ export async function callGemini(userTurn: string): Promise<string> {
       },
       {
         role: "model",
-        parts: [{ text: "Understood. I am ready to answer questions about this story." }],
+        parts: [
+          {
+            text: "Understood. I am ready to answer questions about this story.",
+          },
+        ],
       },
       {
         role: "user",
@@ -178,8 +177,7 @@ export async function callGemini(userTurn: string): Promise<string> {
 // =============================================================================
 
 type ParseResult =
-  | { ok: true; data: RawGeminiAnswer }
-  | { ok: false; error: string };
+  { ok: true; data: RawGeminiAnswer } | { ok: false; error: string };
 
 /**
  * parseAndValidate
@@ -248,11 +246,11 @@ export function guardFactsUsed(
   // outside the pack, which means its answer may be partially unsupported.
   let epistemicState = raw.epistemicState;
 
-  if (strippedIds.length > 0 && epistemicState === 'known') {
-    epistemicState = 'partial';
+  if (strippedIds.length > 0 && epistemicState === "known") {
+    epistemicState = "partial";
   }
 
-  const factsUsed = epistemicState === 'unknown' ? [] : guardedFactsUsed;
+  const factsUsed = epistemicState === "unknown" ? [] : guardedFactsUsed;
 
   const notKnownAspects =
     strippedIds.length > 0

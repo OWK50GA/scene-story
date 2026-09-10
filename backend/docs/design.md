@@ -115,6 +115,7 @@ agentic-cinema/
 All tables live in the `lmm` database on ClickHouse Cloud.
 
 ### universes
+
 ```sql
 CREATE TABLE lmm.universes (
   universe_id   String,
@@ -126,6 +127,7 @@ ORDER BY (universe_id);
 ```
 
 ### projects
+
 ```sql
 CREATE TABLE lmm.projects (
   project_id    String,
@@ -139,6 +141,7 @@ ORDER BY (universe_id, project_id);
 ```
 
 ### story_units
+
 ```sql
 CREATE TABLE lmm.story_units (
   story_unit_id         String,
@@ -160,6 +163,7 @@ ORDER BY (universe_id, project_id, release_order);
 ```
 
 ### universe_entities
+
 ```sql
 CREATE TABLE lmm.universe_entities (
   entity_id                String,
@@ -178,6 +182,7 @@ ORDER BY (universe_id, entity_id);
 `parent_entity_id` enables arbitrary-depth type hierarchies (e.g. Tesseract → Infinity Stone → Cosmic Artifact). Inheritance is resolved lazily at query time — only ancestors that have active claims relevant to the current query are traversed.
 
 ### temporal_relations
+
 ```sql
 CREATE TABLE lmm.temporal_relations (
   unit_a_id     String,
@@ -193,6 +198,7 @@ ORDER BY (universe_id, unit_a_id, unit_b_id);
 The `(unit_a_id, unit_b_id)` pair is always stored with `unit_a_id < unit_b_id` lexicographically to avoid duplicate pairs.
 
 ### scenes
+
 ```sql
 CREATE TABLE lmm.scenes (
   scene_id          String,
@@ -209,6 +215,7 @@ ORDER BY (story_unit_id, scene_number);
 ```
 
 ### claims
+
 ```sql
 CREATE TABLE lmm.claims (
   claim_id                 String,
@@ -238,6 +245,7 @@ ORDER BY (universe_id, universe_entity_id, property, story_unit_id, valid_to_sce
 The ORDER BY serves as the compound index for both within-unit and cross-unit conflict queries. `valid_to_scene` sorts NULLs last in ClickHouse, clustering active claims together.
 
 ### events
+
 ```sql
 CREATE TABLE lmm.events (
   event_id              String,
@@ -255,6 +263,7 @@ ORDER BY (story_unit_id, scene_number);
 ```
 
 ### continuity_findings
+
 ```sql
 CREATE TABLE lmm.continuity_findings (
   finding_id            String,
@@ -308,6 +317,7 @@ The hierarchy is only useful when the story makes claims at multiple levels. For
 ### Storage
 
 Every story unit carries three temporal fields:
+
 - `in_universe_period` (String, always required) — a human-readable label, e.g. "World War II, 1942", "post-Snap, 2023"
 - `in_universe_date_start` (Nullable Int32) — year, e.g. `1942`
 - `in_universe_date_end` (Nullable Int32) — year for multi-year spans; equals start for single-year stories
@@ -336,12 +346,15 @@ The parser runs before any agent is invoked. It is pure TypeScript with no LLM c
 **PDF input**: use `pdf-parse` to extract raw text, then apply the text parser.
 
 **Text input**: split on scene heading patterns. A scene heading is a line matching:
+
 ```
 /^(INT\.|EXT\.|INT\.\/EXT\.|EXT\.\/INT\.)\s+/i
 ```
+
 Each match begins a new scene. Scene number is assigned sequentially from 1.
 
 Edge cases:
+
 - Title pages and preamble content before the first heading are stored as scene 0 with type `preamble` and excluded from ingestion.
 - `DISSOLVE TO:` and `CUT TO:` transitions are stripped from `raw_text`.
 
@@ -359,7 +372,7 @@ type SceneExtraction = {
     canonical_name: string;
     entity_type: "character" | "object" | "location" | "faction" | "concept";
     description: string;
-    parent_entity_name: string | null;  // null if no type relationship is explicit in text
+    parent_entity_name: string | null; // null if no type relationship is explicit in text
   }[];
   claims: {
     entity_name: string;
@@ -479,7 +492,12 @@ type EntityDossier = {
   relevantEvents: Event[];
 
   // Story unit metadata
-  storyUnit: { storyUnitId: string; title: string; inUniversePeriod: string; canonTier: number };
+  storyUnit: {
+    storyUnitId: string;
+    title: string;
+    inUniversePeriod: string;
+    canonTier: number;
+  };
 
   // Cross-unit only — populated by cross-unit.ts
   temporalRelation?: TemporalRelationType;
@@ -576,7 +594,7 @@ type GuardianVerdict = {
   conflictType: "confirmed" | "normal_transition" | "ambiguous";
   severity: "high" | "medium" | "low";
   explanation: string;
-  resolutionSuggestion: string;  // "" for normal_transition
+  resolutionSuggestion: string; // "" for normal_transition
 };
 ```
 
@@ -602,11 +620,11 @@ Gemini instruction. There are no exceptions.
 
 ### Write Rules
 
-| Verdict | `updateClaimValidTo` called | `writeFinding` called |
-|---|---|---|
-| `normal_transition` | yes — earlier claim gets `valid_to_scene = sceneB` | no |
-| `confirmed` | yes | yes |
-| `ambiguous` | yes | yes |
+| Verdict             | `updateClaimValidTo` called                        | `writeFinding` called |
+| ------------------- | -------------------------------------------------- | --------------------- |
+| `normal_transition` | yes — earlier claim gets `valid_to_scene = sceneB` | no                    |
+| `confirmed`         | yes                                                | yes                   |
+| `ambiguous`         | yes                                                | yes                   |
 
 The Guardian may only call `updateClaimValidTo` and `markClaimSupersededByCanon`.
 It has no access to `writeClaim`, `writeEvent`, or any delete operation. This is
@@ -703,12 +721,14 @@ VIEWER QUESTION: {question}
 The Director is an ADK `LlmAgent` with two tool groups:
 
 **Orchestration tools:**
+
 - `run_ingestion_pipeline(story_unit_id, scene_count)` — calls Story Analyst for each scene sequentially, emits SSE progress events
 - `run_within_unit_guardian(story_unit_id)` — calls Continuity Guardian within-unit pass
 - `run_cross_unit_guardian(universe_id)` — calls Continuity Guardian cross-unit pass
 - `run_companion_query(universe_id, question, boundary)` — calls Audience Companion
 
 **Monitoring tools:**
+
 - `check_ingestion_health(story_unit_id)` — queries Grafana for claim counts and scene durations
 - `retry_scene(story_unit_id, scene_number)` — re-runs Story Analyst for a single scene
 - `flag_for_review(universe_id, context)` — writes a structured alert to Loki
@@ -716,6 +736,7 @@ The Director is an ADK `LlmAgent` with two tool groups:
 ### Post-Ingestion Sequence
 
 When `run_ingestion_pipeline` completes for a story unit, the Director automatically runs:
+
 1. `run_within_unit_guardian(story_unit_id)`
 2. `run_cross_unit_guardian(universe_id)`
 
@@ -724,6 +745,7 @@ This sequence is always triggered together. The API's `POST /api/units/:id/inges
 ### Anomaly Thresholds
 
 The Director's monitoring triggers on:
+
 - Claims per scene < 2 (possible extraction failure)
 - Scene processing time > 5× the project median
 - Any scene with `ingestion_status = 'failed'`
@@ -735,31 +757,32 @@ On anomaly: retry once → if still anomalous: call `flag_for_review`, return 50
 ### ClickHouse MCP Server
 
 The MCP server runs as a sidecar process. It exposes 17 named operations, each with:
+
 - A tool name and description (used by the LLM to select the right tool)
 - An input schema (Zod-validated before SQL execution)
 - Parameterised SQL (ClickHouse native parameter binding — no string interpolation)
 
 The 17 operations:
 
-| Operation | Description |
-|---|---|
-| `get_universe_entity` | Fetch entity + lazily resolved parent claims |
-| `find_universe_entities` | Search by name within a universe |
-| `get_entity_history` | All claims for an entity across all units, ordered by in-universe time |
-| `find_active_claims` | Active claims for an entity within a story unit |
-| `get_scene_facts` | All claims and events for a scene |
-| `get_current_state` | Active claims for a list of entity IDs as of a given scene (context injection) |
-| `get_world_state` | Active canonical claims for a universe as of an in-universe time point |
-| `get_companion_facts` | Claims within a spoiler boundary (multi-unit boundary list) |
-| `find_within_unit_conflicts` | Conflicting claim pairs within one story unit |
-| `find_cross_unit_conflicts` | Conflicting claim pairs across story units in a universe |
-| `get_temporal_relation` | Retrieve stored temporal relation between two story units |
-| `write_claim` | Insert a validated claim (enforces confidence–source_type contract) |
-| `write_event` | Insert an event record |
-| `write_finding` | Insert a finding record |
-| `write_temporal_relation` | Store a resolved temporal ordering |
-| `update_claim_valid_to` | Set valid_to_scene on a claim (Guardian only) |
-| `mark_claim_superseded_by_canon` | Flag a lower-tier claim as superseded (Guardian only) |
+| Operation                        | Description                                                                    |
+| -------------------------------- | ------------------------------------------------------------------------------ |
+| `get_universe_entity`            | Fetch entity + lazily resolved parent claims                                   |
+| `find_universe_entities`         | Search by name within a universe                                               |
+| `get_entity_history`             | All claims for an entity across all units, ordered by in-universe time         |
+| `find_active_claims`             | Active claims for an entity within a story unit                                |
+| `get_scene_facts`                | All claims and events for a scene                                              |
+| `get_current_state`              | Active claims for a list of entity IDs as of a given scene (context injection) |
+| `get_world_state`                | Active canonical claims for a universe as of an in-universe time point         |
+| `get_companion_facts`            | Claims within a spoiler boundary (multi-unit boundary list)                    |
+| `find_within_unit_conflicts`     | Conflicting claim pairs within one story unit                                  |
+| `find_cross_unit_conflicts`      | Conflicting claim pairs across story units in a universe                       |
+| `get_temporal_relation`          | Retrieve stored temporal relation between two story units                      |
+| `write_claim`                    | Insert a validated claim (enforces confidence–source_type contract)            |
+| `write_event`                    | Insert an event record                                                         |
+| `write_finding`                  | Insert a finding record                                                        |
+| `write_temporal_relation`        | Store a resolved temporal ordering                                             |
+| `update_claim_valid_to`          | Set valid_to_scene on a claim (Guardian only)                                  |
+| `mark_claim_superseded_by_canon` | Flag a lower-tier claim as superseded (Guardian only)                          |
 
 The server does not accept arbitrary SQL. Failed validation returns a structured error; no SQL is executed.
 
@@ -790,25 +813,26 @@ Push is fire-and-forget with a 1000-event in-memory queue. Failed pushes are dro
 
 ### Prometheus Metrics
 
-| Metric | Labels |
-|---|---|
-| `lmm_scene_ingestion_duration_ms` | story_unit_id |
-| `lmm_claims_written_total` | story_unit_id, source_type |
-| `lmm_confidence_distribution` | source_type, bucket |
-| `lmm_extraction_retries_total` | story_unit_id |
-| `lmm_extraction_failures_total` | story_unit_id |
-| `lmm_guardian_duration_ms` | scope |
-| `lmm_claim_pairs_examined_total` | scope |
-| `lmm_findings_written_total` | conflict_type, scope |
-| `lmm_companion_query_duration_ms` | — |
-| `lmm_companion_claims_retrieved_total` | — |
-| `lmm_companion_boundary_units_count` | — |
+| Metric                                 | Labels                     |
+| -------------------------------------- | -------------------------- |
+| `lmm_scene_ingestion_duration_ms`      | story_unit_id              |
+| `lmm_claims_written_total`             | story_unit_id, source_type |
+| `lmm_confidence_distribution`          | source_type, bucket        |
+| `lmm_extraction_retries_total`         | story_unit_id              |
+| `lmm_extraction_failures_total`        | story_unit_id              |
+| `lmm_guardian_duration_ms`             | scope                      |
+| `lmm_claim_pairs_examined_total`       | scope                      |
+| `lmm_findings_written_total`           | conflict_type, scope       |
+| `lmm_companion_query_duration_ms`      | —                          |
+| `lmm_companion_claims_retrieved_total` | —                          |
+| `lmm_companion_boundary_units_count`   | —                          |
 
 Pushed to Grafana Cloud Prometheus via remote write after each pipeline stage.
 
 ### Grafana Dashboard
 
 `grafana/dashboards/lmm-overview.json` defines five panels:
+
 1. Claims per scene over ingestion (bar chart, x = scene number, y = claim count, grouped by story unit)
 2. Confidence distribution (stacked bar: explicit / implied / inferred)
 3. Guardian findings by type and scope (grouped bar: within_unit / cross_unit × confirmed / ambiguous)
@@ -858,6 +882,7 @@ data: {"scene_count": 14, "claim_count": 89, "failed_scenes": [7]}
 ### Error Response Shape
 
 All errors return `{ error: string, code: string }` with dot-separated codes:
+
 - `universe.not_found`
 - `project.not_found`
 - `unit.not_found`
@@ -876,6 +901,7 @@ Two screenplays, one universe, one project (type: film series, canon_tier: 1).
 **Universe**: The Voss Cipher — a fictional Cold War spy thriller universe.
 
 **Film A — "The Voss Cipher" (1943)**
+
 - 14 scenes
 - Characters: Agent Clara Voss (protagonist), Colonel Meinhardt (antagonist), Dr. Hartley (supporting)
 - Objects: the Cipher Device, the Red Ledger, the Signal Watch, the Photograph
@@ -885,6 +911,7 @@ Two screenplays, one universe, one project (type: film series, canon_tier: 1).
 - `in_universe_date_start`: 1943
 
 **Film B — "Legacy Protocol" (present day)**
+
 - 14 scenes
 - Characters: Director Sarah Voss (Clara's granddaughter, new entity with family link), Marcus Webb (new character), Agent Clara Voss and Colonel Meinhardt appear in archival/referenced context
 - Objects: the Cipher Device (same universe entity as Film A), the Red Ledger (same entity)
@@ -893,6 +920,7 @@ Two screenplays, one universe, one project (type: film series, canon_tier: 1).
 - `in_universe_date_start`: 2024
 
 This fixture produces:
+
 - 2 within-unit findings from Film A (both confirmed, high severity)
 - 1 cross-unit finding spanning Film A and Film B (confirmed, high severity)
 - 0 false positives from the two clean transitions
@@ -914,10 +942,10 @@ The spoiler boundary is enforced at the SQL level inside `get_companion_facts`, 
 The `write_claim` MCP operation enforces:
 
 | source_type | valid range |
-|---|---|
-| explicit | 0.90 – 1.00 |
-| implied | 0.75 – 0.89 |
-| inferred | 0.00 – 0.60 |
+| ----------- | ----------- |
+| explicit    | 0.90 – 1.00 |
+| implied     | 0.75 – 0.89 |
+| inferred    | 0.00 – 0.60 |
 
 Claims violating this are rejected with a structured error. They are not silently coerced.
 
@@ -972,6 +1000,7 @@ Vitest, no network calls. Cover: all four heading prefix variants, sequential sc
 ### MCP Tool Validation Tests
 
 Each of the 17 operations tested in isolation against a ClickHouse mock:
+
 - Valid inputs produce correct parameterised query bindings
 - Invalid inputs return structured errors without executing SQL
 - `write_claim` rejects out-of-range confidence values
@@ -981,6 +1010,7 @@ Each of the 17 operations tested in isolation against a ClickHouse mock:
 ### Agent Prompt Integration Tests
 
 Marked `@integration`, skipped unless `RUN_INTEGRATION=true`. Use real Gemini calls.
+
 - Story Analyst on Film A fixture: ≥ 4 entities, ≥ 15 claims, 0 schema failures
 - Within-unit Guardian on Film A: exactly 2 confirmed findings, 0 false positives
 - Cross-unit Guardian on Film A + Film B: exactly 1 confirmed cross-unit finding (Cipher Device)

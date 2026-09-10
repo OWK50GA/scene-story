@@ -119,7 +119,7 @@ export async function buildCurrentStateFacts(
 
   // Dedup: iterate in order (already sorted by valid_from_scene asc).
   // Last write wins → latest value per entity+property.
-  const dedup = new Map<string, typeof rows[number]>();
+  const dedup = new Map<string, (typeof rows)[number]>();
 
   for (const row of rows) {
     const key = `${row.entityName}::${row.property}`;
@@ -165,7 +165,11 @@ export async function buildHistoricalFacts(
   universeId: string,
 ): Promise<PackFact[]> {
   // Step 1 — resolve entity summaries to match against the question.
-  const allSummaries = await buildEntitySummaries(storyUnitId, upToScene, universeId);
+  const allSummaries = await buildEntitySummaries(
+    storyUnitId,
+    upToScene,
+    universeId,
+  );
   const resolvedEntities = resolveEntitiesFromQuestion(question, allSummaries);
   const resolvedIds = resolvedEntities.map((e) => e.entityId);
 
@@ -187,7 +191,8 @@ export async function buildHistoricalFacts(
   // (one-hop: include entities connected to the resolved set via events).
   const hopIds = new Set<string>();
   for (const ev of directEvents) {
-    if (!resolvedIds.includes(ev.subjectEntityId)) hopIds.add(ev.subjectEntityId);
+    if (!resolvedIds.includes(ev.subjectEntityId))
+      hopIds.add(ev.subjectEntityId);
     if (ev.objectEntityId && !resolvedIds.includes(ev.objectEntityId)) {
       hopIds.add(ev.objectEntityId);
     }
@@ -280,7 +285,11 @@ export async function buildSummaryFacts(
   upToScene: number,
   universeId: string,
 ): Promise<PackFact[]> {
-  const allSummaries = await buildEntitySummaries(storyUnitId, upToScene, universeId);
+  const allSummaries = await buildEntitySummaries(
+    storyUnitId,
+    upToScene,
+    universeId,
+  );
   const allIds = allSummaries.map((e) => e.entityId);
 
   const [claims, events] = await Promise.all([
@@ -366,7 +375,10 @@ export async function buildEntitySummaries(
   for (const row of rows) {
     const existing = entityMap.get(row.entityName);
     if (!existing) {
-      entityMap.set(row.entityName, { entityId: row.entityId, firstSeen: row.sourceSceneNumber });
+      entityMap.set(row.entityName, {
+        entityId: row.entityId,
+        firstSeen: row.sourceSceneNumber,
+      });
     } else if (row.sourceSceneNumber < existing.firstSeen) {
       existing.firstSeen = row.sourceSceneNumber;
     }
@@ -450,9 +462,9 @@ export async function buildSceneDigests(
       const byEntity = new Map<string, string[]>();
       for (const fact of sceneFacts) {
         if (!byEntity.has(fact.entityName)) byEntity.set(fact.entityName, []);
-        byEntity.get(fact.entityName)!.push(
-          `${fact.property} is ${fact.value}`,
-        );
+        byEntity
+          .get(fact.entityName)!
+          .push(`${fact.property} is ${fact.value}`);
       }
 
       const parts: string[] = [];

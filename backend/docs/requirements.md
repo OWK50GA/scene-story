@@ -18,7 +18,7 @@ The data model is designed to support all four from day one.
 ## Glossary
 
 - **Universe**: The root container. All entities, projects, and story units belong to a universe. Examples: MCU, Arrowverse, House M.D.
-- **Project**: A creative work within a universe. Can be a single film, a film series, a TV series, or a crossover. Examples: *Iron Man* (single film), *The Avengers Saga* (film series), *CW Flash* (TV series).
+- **Project**: A creative work within a universe. Can be a single film, a film series, a TV series, or a crossover. Examples: _Iron Man_ (single film), _The Avengers Saga_ (film series), _CW Flash_ (TV series).
 - **Story Unit**: A single self-contained narrative within a project. A film is a story unit. An episode is a story unit. Story units are the unit of ingestion.
 - **Scene**: A numbered scene within a story unit, parsed from a screenplay.
 - **Universe Entity**: A character, object, location, faction, or concept defined at universe scope. Entities are not owned by any project or story unit; they participate in them.
@@ -322,11 +322,13 @@ The demo fixture consists of two screenplays written for the same universe, desi
 
 WHEN the demo fixture is loaded
 THE SYSTEM SHALL have the following structure:
+
 - One universe: a fictional spy thriller universe
 - One project of type "film series" with canon_tier 1
 - Two story units: Film A (set during World War II) and Film B (set in the present day, ~80 years later)
 
 Film A SHALL contain:
+
 - 12–15 scenes
 - 3 named characters, 4 named objects (including one object that appears in both films)
 - 2 planted within-unit contradictions: clear physical impossibilities (object in two places, or character with contradictory knowledge in adjacent scenes)
@@ -334,6 +336,7 @@ Film A SHALL contain:
 - Precise in_universe_date_start: a year in the 1940s
 
 Film B SHALL contain:
+
 - 12–15 scenes
 - 2 characters who also appear in Film A (same universe entities), 2 new characters
 - 1 planted cross-unit contradiction: a property of the shared object that Film B explicitly contradicts what Film A established, with no in-universe event that explains the change

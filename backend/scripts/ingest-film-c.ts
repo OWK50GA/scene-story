@@ -48,24 +48,32 @@ async function post<T>(url: string, body: unknown): Promise<T> {
     body: JSON.stringify(body),
   });
   const json = (await res.json()) as T;
-  if (!res.ok) throw new Error(`POST ${url} → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(`POST ${url} → ${res.status}: ${JSON.stringify(json)}`);
   return json;
 }
 
 async function get<T>(url: string): Promise<T> {
   const res = await fetch(url);
   const json = (await res.json()) as T;
-  if (!res.ok) throw new Error(`GET ${url} → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(`GET ${url} → ${res.status}: ${JSON.stringify(json)}`);
   return json;
 }
 
-async function postFile(url: string, filePath: string): Promise<Record<string, unknown>> {
+async function postFile(
+  url: string,
+  filePath: string,
+): Promise<Record<string, unknown>> {
   const form = new FormData();
   const blob = new Blob([fs.readFileSync(filePath)], { type: "text/plain" });
   form.append("file", blob, path.basename(filePath));
   const res = await fetch(url, { method: "POST", body: form });
   const json = (await res.json()) as Record<string, unknown>;
-  if (!res.ok) throw new Error(`POST ${url} (file) → ${res.status}: ${JSON.stringify(json)}`);
+  if (!res.ok)
+    throw new Error(
+      `POST ${url} (file) → ${res.status}: ${JSON.stringify(json)}`,
+    );
   return json;
 }
 
@@ -79,9 +87,15 @@ function banner(text: string) {
   console.log("─".repeat(60));
 }
 
-function pass(msg: string) { console.log(`  ✓ ${msg}`); }
-function fail(msg: string) { console.log(`  ✗ ${msg}`); }
-function info(msg: string) { console.log(`    ${msg}`); }
+function pass(msg: string) {
+  console.log(`  ✓ ${msg}`);
+}
+function fail(msg: string) {
+  console.log(`  ✗ ${msg}`);
+}
+function info(msg: string) {
+  console.log(`    ${msg}`);
+}
 
 async function waitForIngestion(unitId: string): Promise<{
   scene_count: number;
@@ -126,18 +140,23 @@ async function main() {
   let failed_count = 0;
 
   function check(condition: boolean, label: string, detail?: string): void {
-    if (condition) { pass(label); passed++; }
-    else { fail(label); failed_count++; }
+    if (condition) {
+      pass(label);
+      passed++;
+    } else {
+      fail(label);
+      failed_count++;
+    }
     if (detail) info(detail);
   }
 
   // ── 1. Universe / project / unit ─────────────────────────────────────────
   banner("Step 1 — Create universe, project, story unit");
 
-  const universe = await post<{ universe_id: string }>(
-    `${BASE}/universes`,
-    { name: "The Glasshouse", description: "Community theater mystery, 2026" },
-  );
+  const universe = await post<{ universe_id: string }>(`${BASE}/universes`, {
+    name: "The Glasshouse",
+    description: "Community theater mystery, 2026",
+  });
   const universeId = universe.universe_id;
   pass(`Universe created: ${universeId}`);
 
@@ -148,19 +167,19 @@ async function main() {
   const projectId = project.data.project_id;
   pass(`Project created: ${projectId}`);
 
-  const unit = await post<{ status: string; story_unit: { story_unit_id: string } }>(
-    `${BASE}/projects/${projectId}/units`,
-    {
-      projectId,
-      universeId,
-      title: "The Glasshouse",
-      unitType: "film",
-      inUniversePeriod: "Present Day, 2026",
-      inUniverseDateStart: 2026,
-      inUniverseDateEnd: 2026,
-      releaseOrder: 1,
-    },
-  );
+  const unit = await post<{
+    status: string;
+    story_unit: { story_unit_id: string };
+  }>(`${BASE}/projects/${projectId}/units`, {
+    projectId,
+    universeId,
+    title: "The Glasshouse",
+    unitType: "film",
+    inUniversePeriod: "Present Day, 2026",
+    inUniverseDateStart: 2026,
+    inUniverseDateEnd: 2026,
+    releaseOrder: 1,
+  });
   const unitId = unit.story_unit.story_unit_id;
   pass(`Story unit created: ${unitId}`);
 
@@ -174,11 +193,17 @@ async function main() {
   banner("Step 3 — Wait for pipeline");
   console.log("  Polling...");
   const ingestion = await waitForIngestion(unitId);
-  check(ingestion.ingestion_status !== "failed" as unknown as boolean,
-    "Ingestion completed without fatal failure");
-  check(ingestion.failed_scenes.length === 0,
+  check(
+    ingestion.ingestion_status !== ("failed" as unknown as boolean),
+    "Ingestion completed without fatal failure",
+  );
+  check(
+    ingestion.failed_scenes.length === 0,
     "No failed scenes",
-    ingestion.failed_scenes.length > 0 ? `Failed: ${ingestion.failed_scenes.join(", ")}` : undefined);
+    ingestion.failed_scenes.length > 0
+      ? `Failed: ${ingestion.failed_scenes.join(", ")}`
+      : undefined,
+  );
   check(ingestion.claim_count > 0, `Claims written: ${ingestion.claim_count}`);
 
   // ── 4. Per-scene claim count ──────────────────────────────────────────────
@@ -190,7 +215,10 @@ async function main() {
 
   const byScene = new Map<number, number>();
   for (const c of claims) {
-    byScene.set(c.source_scene_number, (byScene.get(c.source_scene_number) ?? 0) + 1);
+    byScene.set(
+      c.source_scene_number,
+      (byScene.get(c.source_scene_number) ?? 0) + 1,
+    );
   }
   let zeroClaimScenes = 0;
   for (const [sceneNum, count] of byScene) {
@@ -210,9 +238,14 @@ async function main() {
   const scene3Claims = claims.filter(
     (c) =>
       c.source_scene_number === 3 &&
-      (c as Record<string, unknown>).entity_name?.toString().toLowerCase().includes("crown"),
+      (c as Record<string, unknown>).entity_name
+        ?.toString()
+        .toLowerCase()
+        .includes("crown"),
   );
-  const crownScene3Location = (scene3Claims as Array<Record<string, unknown>>).find(
+  const crownScene3Location = (
+    scene3Claims as Array<Record<string, unknown>>
+  ).find(
     (c) =>
       (c.property as string).toLowerCase().includes("location") ||
       (c.property as string).toLowerCase().includes("possession"),
@@ -231,14 +264,12 @@ async function main() {
     (c) =>
       (c.source_scene_number as number) >= 6 &&
       c.entity_name?.toString().toLowerCase().includes("crown") &&
-      (
-        (c.property as string).toLowerCase().includes("location") ||
-        (c.property as string).toLowerCase().includes("possession")
-      ),
+      ((c.property as string).toLowerCase().includes("location") ||
+        (c.property as string).toLowerCase().includes("possession")),
   );
   const crownGone = crownLaterClaims.find((c) =>
-    ["missing", "gone", "unknown", "absent", "basement", "disappeared"].some((w) =>
-      (c.value as string).toLowerCase().includes(w),
+    ["missing", "gone", "unknown", "absent", "basement", "disappeared"].some(
+      (w) => (c.value as string).toLowerCase().includes(w),
     ),
   );
   check(
@@ -276,26 +307,32 @@ async function main() {
     failed_count++;
   } else {
     for (const f of findings) {
-      info(`[${f.conflict_type.toUpperCase()}/${f.severity}] ${f.explanation.slice(0, 120)}`);
+      info(
+        `[${f.conflict_type.toUpperCase()}/${f.severity}] ${f.explanation.slice(0, 120)}`,
+      );
     }
 
     // Silver Crown: should be flagged (confirmed or ambiguous — either is acceptable)
-    const crownFinding = findings.find((f) =>
-      f.explanation.toLowerCase().includes("crown") ||
-      f.explanation.toLowerCase().includes("display") ||
-      f.explanation.toLowerCase().includes("basement"),
+    const crownFinding = findings.find(
+      (f) =>
+        f.explanation.toLowerCase().includes("crown") ||
+        f.explanation.toLowerCase().includes("display") ||
+        f.explanation.toLowerCase().includes("basement"),
     );
     check(
       crownFinding !== undefined,
       "Silver Crown transition flagged by Guardian",
-      crownFinding ? `  conflict_type=${crownFinding.conflict_type}` : "  Not found in findings",
+      crownFinding
+        ? `  conflict_type=${crownFinding.conflict_type}`
+        : "  Not found in findings",
     );
 
     // Theater Key: should NOT be confirmed (ambiguous is fine, normal_transition is fine,
     // confirmed would be over-firing)
-    const keyFinding = findings.find((f) =>
-      f.explanation.toLowerCase().includes("key") ||
-      f.explanation.toLowerCase().includes("hook"),
+    const keyFinding = findings.find(
+      (f) =>
+        f.explanation.toLowerCase().includes("key") ||
+        f.explanation.toLowerCase().includes("hook"),
     );
     if (keyFinding) {
       check(
@@ -304,7 +341,9 @@ async function main() {
         `  explanation: ${keyFinding.explanation.slice(0, 100)}`,
       );
     } else {
-      pass("Theater Key: no finding written (acceptable — ambiguous or normal_transition)");
+      pass(
+        "Theater Key: no finding written (acceptable — ambiguous or normal_transition)",
+      );
       passed++;
     }
   }
@@ -342,7 +381,9 @@ async function main() {
   );
   info(`Answer: ${q10.answer?.slice(0, 120)}`);
 
-  banner("Step 11 — Companion: Mrs. Vale at scene 5 boundary (should be unknown)");
+  banner(
+    "Step 11 — Companion: Mrs. Vale at scene 5 boundary (should be unknown)",
+  );
   const q11 = await post<{
     status: string;
     epistemic_state: string;
@@ -358,7 +399,9 @@ async function main() {
   );
   info(`Answer: ${q11.answer?.slice(0, 120)}`);
 
-  banner("Step 12 — Companion: How did the crown end up in the basement? (up to scene 10)");
+  banner(
+    "Step 12 — Companion: How did the crown end up in the basement? (up to scene 10)",
+  );
   const q12 = await post<{
     status: string;
     epistemic_state: string;
